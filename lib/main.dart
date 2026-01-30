@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'pages/home_page.dart';
 import 'pages/booking_page.dart';
-import 'pages/parking_lot_detail_page.dart';
 import 'pages/map_page.dart';
 import 'pages/points_page.dart';
 import 'pages/profile_page.dart';
@@ -30,7 +29,8 @@ class ParkEasyApp extends StatelessWidget {
 				'/map': (context) => const MapPage(),
 				'/points': (context) => const PointsPage(),
 				'/profile': (context) => const ProfilePage(),
-				'/parking_detail': (context) => const ParkingLotDetailPage(),
+				// Use direct navigation with MaterialPageRoute when opening details
+				// '/parking_detail': (context) => const ParkingLotDetailPage(),
 			},
 		);
 	}

@@ -55,7 +55,22 @@ class _HomePageState extends State<HomePage> {
       body: pages[_selectedIndex],
       bottomNavigationBar: AppNavBar(
         currentIndex: _selectedIndex,
-        onTap: (i) => setState(() => _selectedIndex = i),
+        onTap: (i) {
+          if (i == 0 || i == 1) {
+            setState(() => _selectedIndex = i);
+            return;
+          }
+
+          // Map other tabs to named routes
+          final routeNames = {
+            2: '/map',
+            3: '/points',
+            4: '/profile',
+          };
+
+          final route = routeNames[i];
+          if (route != null) Navigator.pushNamed(context, route);
+        },
       ),
     );
   }
@@ -161,7 +176,7 @@ class _HomePageState extends State<HomePage> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
+            color: Colors.black.withOpacity(0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -200,7 +215,7 @@ class _HomePageState extends State<HomePage> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 5)],
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 5)],
       ),
       child: Row(
         children: [
@@ -302,7 +317,7 @@ class _HomePageState extends State<HomePage> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4))],
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -339,7 +354,7 @@ class _HomePageState extends State<HomePage> {
                       children: [
                         const Icon(Icons.star, color: Colors.orange, size: 16),
                         const SizedBox(width: 4),
-                        Text('4rating', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                        Text(rating.toString(), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                       ],
                     ),
                   ],
@@ -406,7 +421,7 @@ class _HomePageState extends State<HomePage> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 5)],
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 5)],
       ),
       child: Row(
         children: [
