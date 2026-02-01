@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:jodhere/features/booking/presentation/pages/booking_page.dart';
+import 'package:jodhere/features/booking/presentation/pages/booking_page_backup.dart';
 import 'package:jodhere/features/home/presentation/pages/home_page.dart';
-import 'package:jodhere/features/map/presentation/pages/map_page.dart';
+// import 'package:jodhere/features/map/presentation/pages/map_page.dart';
 import 'package:jodhere/features/points/presentation/pages/points_page.dart';
 import 'package:jodhere/features/profile/presentation/pages/profile_page.dart';
 import 'package:jodhere/shared/widgets/app_navbar.dart';
@@ -31,7 +32,8 @@ class _MainLayoutState extends State<MainLayout> {
   final _pages = const [
     HomePage(),
     BookingPage(),
-    MapPage(),
+    BookingPageBackup(),
+    // MapPage(),
     PointsPage(),
     ProfilePage(),
   ];
