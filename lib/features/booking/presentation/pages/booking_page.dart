@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
-
 import 'package:jodhere/features/booking/presentation/widgets/booking_search_bar.dart';
 import 'package:jodhere/features/booking/presentation/widgets/booking_filter_row.dart';
 import 'package:jodhere/features/booking/presentation/widgets/booking_datetime_section.dart';
 import 'package:jodhere/features/booking/presentation/widgets/booking_parking_list.dart';
 
-class BookingPageBackup extends StatelessWidget {
-  const BookingPageBackup({super.key});
+class BookingPage extends StatelessWidget {
+  const BookingPage({super.key});
 
   @override
   Widget build(BuildContext context) {

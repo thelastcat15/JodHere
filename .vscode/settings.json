@@ -1,3 +1,4 @@
 {
-  "cmake.sourceDirectory": "/windows"
+  "cmake.sourceDirectory": "/windows",
+  "cmake.ignoreCMakeListsMissing": true
 }

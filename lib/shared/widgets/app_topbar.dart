@@ -7,7 +7,7 @@ class AppTopBar extends StatelessWidget implements PreferredSizeWidget {
 
   const AppTopBar({
     super.key,
-    required this.title,
+    this.title = 'JodHere',
     this.onNotificationTap,
   });
 

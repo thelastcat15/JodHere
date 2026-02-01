@@ -1,0 +1,22 @@
+Domain = “ความจริงทางธุรกิจ” (Business Truth)
+
+
+Domain ส่งข้อมูลไปให้ Data ใช้โดย
+- Repository ร่างสัญญาขอใช้ Entity
+- UseCase รวมสัญญา Repository มาทำเป็น Class เพื่อใช้งาน
+
+UseCase
+- validate ParkingId
+- เช็กสิทธิ์ผู้ใช้
+- combine หลาย repository
+- calculate ราคา
+- log event
+
+RepositoryImpl
+- เรียก datasource (API / mock / db)
+- แปลง Model → Entity (Domain)
+- ทำให้ Domain ไม่รู้จัก JSON / API / Flutter
+
+Future<BookingPreview> call(ParkingId parkingId) {
+  return repository.getBookingPreview(parkingId);
+}

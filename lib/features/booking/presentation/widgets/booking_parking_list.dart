@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:jodhere/features/map/presentation/widgets/parking_lot_detail_page.dart';
+import 'package:jodhere/features/booking/presentation/pages/parking_booking_page.dart';
 
 class BookingParkingListItem extends StatelessWidget {
   final String title;
@@ -65,13 +65,7 @@ class BookingParkingListItem extends StatelessWidget {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => ParkingLotDetailPage(
-                        name: title,
-                        location: subtitle,
-                        distance: subtitle.replaceAll('ระยะทาง ', ''),
-                        price: price,
-                        rating: double.parse(rating),
-                      ),
+                      builder: (_) => ParkingBookingPage(parkingId: "waawdawd"),
                     ),
                   );
                 },

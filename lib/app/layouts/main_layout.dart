@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:jodhere/features/booking/presentation/pages/booking_page.dart';
-import 'package:jodhere/features/booking/presentation/pages/booking_page_backup.dart';
 import 'package:jodhere/features/home/presentation/pages/home_page.dart';
 // import 'package:jodhere/features/map/presentation/pages/map_page.dart';
 import 'package:jodhere/features/points/presentation/pages/points_page.dart';
@@ -32,7 +31,6 @@ class _MainLayoutState extends State<MainLayout> {
   final _pages = const [
     HomePage(),
     BookingPage(),
-    BookingPageBackup(),
     // MapPage(),
     PointsPage(),
     ProfilePage(),
@@ -51,7 +49,7 @@ class _MainLayoutState extends State<MainLayout> {
     return PopScope(
       canPop: false,
       child: Scaffold(
-        appBar: AppTopBar(title: 'JodHere'),
+        appBar: AppTopBar(),
         body: IndexedStack(
           index: _currentIndex,
           children: _pages,
