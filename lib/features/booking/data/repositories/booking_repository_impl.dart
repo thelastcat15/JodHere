@@ -9,8 +9,8 @@ class BookingRepositoryImpl implements BookingRepository {
   BookingRepositoryImpl(this.datasource);
 
   @override
-  Future<BookingPreview> getBookingPreview(ParkingId parkingId) {
-    final model = datasource.getPreview(parkingId.value);
-    return model.Entity();
+  Future<BookingPreview> getBookingPreview(ParkingId parkingId) async {
+    final model = await datasource.getPreview(parkingId.value);
+    return model;
   }
 }
