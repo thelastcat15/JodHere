@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:jodhere/features/booking/presentation/pages/booking_page.dart';
 import 'package:jodhere/features/home/presentation/pages/home_page.dart';
-// import 'package:jodhere/features/map/presentation/pages/map_page.dart';
+import 'package:jodhere/features/map/presentation/pages/map_page.dart';
 import 'package:jodhere/features/points/presentation/pages/points_page.dart';
 import 'package:jodhere/features/profile/presentation/pages/profile_page.dart';
 import 'package:jodhere/shared/widgets/app_navbar.dart';
@@ -10,11 +10,8 @@ import 'package:jodhere/shared/widgets/app_topbar.dart';
 class MainLayout extends StatefulWidget {
   final int initialIndex;
 
-  const MainLayout({
-    super.key,
-    this.initialIndex = 0,  
-  });
-  
+  const MainLayout({super.key, this.initialIndex = 0});
+
   @override
   State<MainLayout> createState() => _MainLayoutState();
 }
@@ -31,7 +28,7 @@ class _MainLayoutState extends State<MainLayout> {
   final _pages = const [
     HomePage(),
     BookingPage(),
-    // MapPage(),
+    MapPage(),
     PointsPage(),
     ProfilePage(),
   ];
@@ -50,10 +47,7 @@ class _MainLayoutState extends State<MainLayout> {
       canPop: false,
       child: Scaffold(
         appBar: AppTopBar(),
-        body: IndexedStack(
-          index: _currentIndex,
-          children: _pages,
-        ),
+        body: IndexedStack(index: _currentIndex, children: _pages),
         bottomNavigationBar: AppNavBar(
           currentIndex: _currentIndex,
           onTap: _onNavTap,
