@@ -28,8 +28,8 @@ class _MainLayoutState extends State<MainLayout> {
   final _pages = const [
     HomePage(),
     BookingPage(),
-    MapPage(),
-    PointsPage(),
+    // MapPage(),
+    // PointsPage(),
     ProfilePage(),
   ];
 
