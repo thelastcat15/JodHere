@@ -9,7 +9,9 @@ class EditAccountDetailsPage extends StatefulWidget {
 
 class _EditAccountDetailsPageState extends State<EditAccountDetailsPage> {
   final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _surnameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _phoneController = TextEditingController();
 
   @override
   void initState() {
@@ -37,7 +39,9 @@ class _EditAccountDetailsPageState extends State<EditAccountDetailsPage> {
               padding: const EdgeInsets.all(16.0),
               child: Column(
                 children: [
-                  _buildTextField('ชื่อ-นามสกุล', _nameController),
+                  _buildTextField('ชื่อ', _nameController),
+                  _buildTextField('นามสกุล', _surnameController),
+                  _buildTextField('เบอร์โทรศัพท์', _phoneController),
                   _buildTextField('อีเมล', _emailController),
                   FilledButton(onPressed: () {}, child: const Text('แก้ไข')),
                 ],

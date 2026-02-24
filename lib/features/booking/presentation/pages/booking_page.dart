@@ -15,9 +15,9 @@ class BookingPage extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const BookingSearchBar(),
-          const SizedBox(height: 12),
-          const BookingFilterRow(),
 
+          // const SizedBox(height: 12),
+          // const BookingFilterRow(),
           const SizedBox(height: 20),
           const BookingDateTimeSection(),
 

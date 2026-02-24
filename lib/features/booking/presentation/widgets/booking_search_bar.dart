@@ -1,27 +1,22 @@
 import 'package:flutter/material.dart';
 
-class BookingSearchBar extends StatelessWidget {
+class BookingSearchBar extends StatefulWidget {
   const BookingSearchBar({super.key});
 
   @override
+  State<BookingSearchBar> createState() => _BookingSearchBarState();
+}
+
+class _BookingSearchBarState extends State<BookingSearchBar> {
+  final TextEditingController _searchController = TextEditingController();
+
+  @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      decoration: BoxDecoration(
-        color: Colors.grey[100],
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.location_on_outlined, color: Colors.grey),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              'ค้นหาตำแหน่งที่จอดรถ',
-              style: TextStyle(color: Colors.grey[600]),
-            ),
-          ),
-        ],
+    return TextField(
+      controller: _searchController,
+      decoration: InputDecoration(
+        labelText: 'ค้นหาลานจอดรถ',
+        prefixIcon: const Icon(Icons.search),
       ),
     );
   }

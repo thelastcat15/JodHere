@@ -4,11 +4,7 @@ class AppNavBar extends StatelessWidget {
   final int currentIndex;
   final ValueChanged<int>? onTap;
 
-  const AppNavBar({
-    super.key,
-    this.currentIndex = 0,
-    this.onTap,
-  });
+  const AppNavBar({super.key, this.currentIndex = 0, this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -20,11 +16,17 @@ class AppNavBar extends StatelessWidget {
       currentIndex: currentIndex,
       onTap: onTap,
       items: const [
-        BottomNavigationBarItem(icon: Icon(Icons.home_filled), label: 'หน้าแรก'),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.home_filled),
+          label: 'หน้าแรก',
+        ),
         BottomNavigationBarItem(icon: Icon(Icons.calendar_month), label: 'จอง'),
-        BottomNavigationBarItem(icon: Icon(Icons.map_outlined), label: 'แผนที่'),
-        BottomNavigationBarItem(icon: Icon(Icons.star_border), label: 'แต้ม'),
-        BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'โปรไฟล์'),
+        // BottomNavigationBarItem(icon: Icon(Icons.map_outlined), label: 'แผนที่'),
+        // BottomNavigationBarItem(icon: Icon(Icons.star_border), label: 'แต้ม'),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.person_outline),
+          label: 'โปรไฟล์',
+        ),
       ],
     );
   }
