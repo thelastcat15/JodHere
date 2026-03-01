@@ -66,7 +66,7 @@ class AppRouter {
 class LoginCallbackPage extends StatefulWidget {
   final Uri? callbackUri;
 
-  const LoginCallbackPage({Key? key, this.callbackUri}) : super(key: key);
+  const LoginCallbackPage({super.key, this.callbackUri});
 
   @override
   State<LoginCallbackPage> createState() => _LoginCallbackPageState();

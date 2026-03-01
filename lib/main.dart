@@ -15,24 +15,20 @@ Future<void> main() async {
     anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
   );
 
-  // Initialize auth state from any existing session
   final currentSession = Supabase.instance.client.auth.currentSession;
   if (currentSession != null) {
     try {
       final access = currentSession.accessToken;
       final refresh = currentSession.refreshToken;
-      if (access != null) {
-        authService.setSession(accessToken: access, refreshToken: refresh);
-      }
+      authService.setSession(accessToken: access, refreshToken: refresh);
     } catch (_) {}
   }
 
-  // Listen for auth state changes and update our AuthService + navigation
   Supabase.instance.client.auth.onAuthStateChange.listen((data) {
     final session = data.session;
     if (session != null) {
       authService.setSession(
-        accessToken: session.accessToken ?? '',
+        accessToken: session.accessToken,
         refreshToken: session.refreshToken,
       );
       JodHereApp.navigatorKey.currentState?.pushNamedAndRemoveUntil(

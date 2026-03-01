@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter/foundation.dart';
 
 class LoginPage extends StatefulWidget {
@@ -110,25 +109,34 @@ class _LoginPageState extends State<LoginPage> {
                           final password = _passwordController.text;
 
                           final supabase = Supabase.instance.client;
+
+                          // เก็บ reference ก่อน await
+                          final messenger = ScaffoldMessenger.of(context);
+                          final navigator = Navigator.of(context);
+
                           try {
                             final res = await supabase.auth.signInWithPassword(
                               email: email,
                               password: password,
                             );
 
+                            if (!context.mounted) return;
+
                             if (res.user != null) {
-                              ScaffoldMessenger.of(context).showSnackBar(
+                              messenger.showSnackBar(
                                 const SnackBar(content: Text('Logged in!')),
                               );
-                              Navigator.pushReplacementNamed(context, '/');
+                              navigator.pushReplacementNamed('/');
                               return;
                             }
 
-                            ScaffoldMessenger.of(context).showSnackBar(
+                            messenger.showSnackBar(
                               const SnackBar(content: Text('Login failed')),
                             );
                           } catch (e) {
-                            ScaffoldMessenger.of(context).showSnackBar(
+                            if (!context.mounted) return;
+
+                            messenger.showSnackBar(
                               SnackBar(content: Text('Login error: $e')),
                             );
                           }
@@ -156,15 +164,22 @@ class _LoginPageState extends State<LoginPage> {
                   height: 56,
                   child: OutlinedButton.icon(
                     onPressed: () async {
+                      final messenger = ScaffoldMessenger.of(context);
+
                       try {
                         final supabase = Supabase.instance.client;
-                        final redirectUrl = kIsWeb ? 'http://localhost:3000/login-callback' : 'jodhere://login-callback';
+                        final redirectUrl = kIsWeb
+                            ? 'http://localhost:3000/login-callback'
+                            : 'jodhere://login-callback';
+
                         await supabase.auth.signInWithOAuth(
                           OAuthProvider.google,
                           redirectTo: redirectUrl,
                         );
                       } catch (e) {
-                        ScaffoldMessenger.of(context).showSnackBar(
+                        if (!context.mounted) return;
+
+                        messenger.showSnackBar(
                           SnackBar(content: Text('Google sign-in error: $e')),
                         );
                       }
