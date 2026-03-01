@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:jodhere/shared/services/auth.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter/foundation.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -96,34 +98,93 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 ),
                 const SizedBox(height: 32),
-                // Login Button
+                    // Login Button
+                    SizedBox(
+                      width: double.infinity,
+                      height: 56,
+                      child: ElevatedButton(
+                        onPressed: () async {
+                          if (!_formKey.currentState!.validate()) return;
+
+                          final email = _emailController.text.trim();
+                          final password = _passwordController.text;
+
+                          final supabase = Supabase.instance.client;
+                          try {
+                            final res = await supabase.auth.signInWithPassword(
+                              email: email,
+                              password: password,
+                            );
+
+                            if (res.user != null) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Logged in!')),
+                              );
+                              Navigator.pushReplacementNamed(context, '/');
+                              return;
+                            }
+
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Login failed')),
+                            );
+                          } catch (e) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Login error: $e')),
+                            );
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF6B46C1),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                        ),
+                        child: const Text(
+                          'LOGIN',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                const SizedBox(height: 24),
+                // Google Sign-in Button (uses Supabase OAuth)
                 SizedBox(
                   width: double.infinity,
                   height: 56,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      if (_formKey.currentState!.validate()) {
-                        authService.setToken('dummy_access_token');
-
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Login successful!')),
+                  child: OutlinedButton.icon(
+                    onPressed: () async {
+                      try {
+                        final supabase = Supabase.instance.client;
+                        final redirectUrl = kIsWeb ? 'http://localhost:3000/login-callback' : 'jodhere://login-callback';
+                        await supabase.auth.signInWithOAuth(
+                          OAuthProvider.google,
+                          redirectTo: redirectUrl,
                         );
-
-                        Navigator.pushNamed(context, '/');
+                      } catch (e) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Google sign-in error: $e')),
+                        );
                       }
                     },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF6B46C1),
+                    style: OutlinedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      side: const BorderSide(color: Color(0xFF6B46C1)),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(30),
                       ),
                     ),
-                    child: const Text(
-                      'LOGIN',
+                    icon: const Icon(
+                      Icons.login,
+                      color: Color(0xFF6B46C1),
+                    ),
+                    label: const Text(
+                      'Sign in with Google',
                       style: TextStyle(
-                        fontSize: 16,
+                        color: Color(0xFF6B46C1),
                         fontWeight: FontWeight.bold,
-                        color: Colors.white,
                       ),
                     ),
                   ),

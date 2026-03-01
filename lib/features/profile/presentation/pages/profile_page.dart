@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:jodhere/features/profile/presentation/pages/edit_account_details_page.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
@@ -170,7 +171,11 @@ class ProfilePage extends StatelessWidget {
                   leading: const Icon(Icons.logout, color: Colors.grey),
                   title: const Text('ออกจากระบบ'),
                   trailing: const Icon(Icons.chevron_right, color: Colors.grey),
-                  onTap: () {},
+                  onTap: () {
+                    final supabase = Supabase.instance.client;
+                    supabase.auth.signOut();
+                    Navigator.pushReplacementNamed(context, '/login');
+                  },
                 ),
               ],
             ),

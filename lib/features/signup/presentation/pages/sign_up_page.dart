@@ -1,5 +1,6 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SignUpPage extends StatefulWidget {
   const SignUpPage({super.key});
@@ -10,8 +11,7 @@ class SignUpPage extends StatefulWidget {
 
 class _SignUpPageState extends State<SignUpPage> {
   final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
-  final _surnameController = TextEditingController();
+  final _displayNameController = TextEditingController();
   final _telController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -20,8 +20,7 @@ class _SignUpPageState extends State<SignUpPage> {
 
   @override
   void dispose() {
-    _nameController.dispose();
-    _surnameController.dispose();
+    _displayNameController.dispose();
     _telController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
@@ -63,14 +62,11 @@ class _SignUpPageState extends State<SignUpPage> {
                   ),
                 ),
                 const SizedBox(height: 40),
-                // Name Field
-                _buildTextFormField(_nameController, 'Name'),
-                const SizedBox(height: 16),
-                // Surname Field
-                _buildTextFormField(_surnameController, 'Surname'),
+                // DisplayName Field
+                _buildTextFormField(_displayNameController, 'Display Name'),
                 const SizedBox(height: 16),
                 // Tel Field
-                _buildTextFormField(_telController, 'Tel.'),
+                _buildTelField(_telController, 'Tel.'),
                 const SizedBox(height: 16),
                 // Email Field
                 _buildTextFormField(_emailController, 'Email'),
@@ -137,17 +133,52 @@ class _SignUpPageState extends State<SignUpPage> {
                   height: 56,
                   child: ElevatedButton(
                     onPressed: _acceptTerms
-                        ? () {
-                            if (_formKey.currentState!.validate()) {
-                              // Handle registration
+                      ? () async {
+                          if (!_formKey.currentState!.validate()) return;
+
+                          final email = _emailController.text.trim();
+                          final password = _passwordController.text;
+                          final confirm = _confirmPasswordController.text;
+                          final displayName = _displayNameController.text.trim();
+                          final tel = _telController.text.trim();
+
+                          if (password != confirm) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Passwords do not match')),
+                            );
+                            return;
+                          }
+
+                          final supabase = Supabase.instance.client;
+
+                          try {
+                            final res = await supabase.auth.signUp(
+                              email: email,
+                              password: password,
+                              data: {
+                                'display_name': displayName,
+                                'phone': tel,
+                              },
+                            );
+
+                            if (res.session != null) {
+                              Navigator.pushReplacementNamed(context, '/');
+                            } else {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
-                                  content: Text('Registration successful!'),
+                                  content: Text(
+                                    'Registration successful! Check your email to confirm.',
+                                  ),
                                 ),
                               );
                             }
+                          } catch (e) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Registration failed: $e')),
+                            );
                           }
-                        : null,
+                        }
+                      : null,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF6B46C1),
                       disabledBackgroundColor: const Color(0xFFD1D5DB),
@@ -206,6 +237,30 @@ class _SignUpPageState extends State<SignUpPage> {
     return TextFormField(
       controller: controller,
       decoration: InputDecoration(labelText: label),
+    );
+  }
+
+  TextFormField _buildTelField(
+    TextEditingController controller,
+    String label,
+  ) {
+    return TextFormField(
+      controller: controller,
+      keyboardType: TextInputType.phone,
+      decoration: InputDecoration(labelText: label),
+      validator: (value) {
+        if (value == null || value.isEmpty) {
+          return 'Please enter phone number';
+        }
+
+        final phone = value.trim();
+
+        if (!RegExp(r'^0[689]\d{8}$').hasMatch(phone)) {
+          return 'Invalid Thai phone number';
+        }
+
+        return null;
+      },
     );
   }
 }

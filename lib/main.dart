@@ -1,6 +1,52 @@
 import 'package:flutter/material.dart';
 import 'package:jodhere/app/app.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:jodhere/shared/services/auth.dart';
+import 'package:jodhere/app/router.dart';
 
-void main() {
-	runApp(const JodHereApp());
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await dotenv.load(fileName: ".env");
+
+  await Supabase.initialize(
+    url: dotenv.env['SUPABASE_URL']!,
+    anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
+  );
+
+  // Initialize auth state from any existing session
+  final currentSession = Supabase.instance.client.auth.currentSession;
+  if (currentSession != null) {
+    try {
+      final access = currentSession.accessToken;
+      final refresh = currentSession.refreshToken;
+      if (access != null) {
+        authService.setSession(accessToken: access, refreshToken: refresh);
+      }
+    } catch (_) {}
+  }
+
+  // Listen for auth state changes and update our AuthService + navigation
+  Supabase.instance.client.auth.onAuthStateChange.listen((data) {
+    final session = data.session;
+    if (session != null) {
+      authService.setSession(
+        accessToken: session.accessToken ?? '',
+        refreshToken: session.refreshToken,
+      );
+      JodHereApp.navigatorKey.currentState?.pushNamedAndRemoveUntil(
+        AppRoutes.main,
+        (route) => false,
+      );
+    } else {
+      authService.logout();
+      JodHereApp.navigatorKey.currentState?.pushNamedAndRemoveUntil(
+        AppRoutes.login,
+        (route) => false,
+      );
+    }
+  });
+
+  runApp(const JodHereApp());
 }
