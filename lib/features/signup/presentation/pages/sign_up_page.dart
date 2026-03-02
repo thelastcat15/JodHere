@@ -67,13 +67,10 @@ class _SignUpPageState extends State<SignUpPage> {
                 _buildTextFormField(_emailController, 'Email'),
                 const SizedBox(height: 16),
                 // Password Field
-                _buildTextFormField(_passwordController, 'Password'),
+                _buildTextFormField(_passwordController, 'Password', hidden: true),
                 const SizedBox(height: 16),
                 // Confirm Password Field
-                _buildTextFormField(
-                  _confirmPasswordController,
-                  'Confirm Password',
-                ),
+                _buildTextFormField(_confirmPasswordController,'Confirm Password', hidden: true),
                 const SizedBox(height: 24),
                 // Terms Agreement Checkbox
                 Row(
@@ -231,11 +228,15 @@ class _SignUpPageState extends State<SignUpPage> {
 
   TextFormField _buildTextFormField(
     TextEditingController controller,
-    String label,
-  ) {
+    String label, {
+    bool hidden = false,
+  }) {
     return TextFormField(
       controller: controller,
-      decoration: InputDecoration(labelText: label),
+      obscureText: hidden,
+      decoration: InputDecoration(
+        labelText: label,
+      ),
     );
   }
 }

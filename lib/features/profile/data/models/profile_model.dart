@@ -13,10 +13,10 @@ class ProfileModel {
 
   factory ProfileModel.fromJson(Map<String, dynamic> json) {
     return ProfileModel(
-      id: json['data']['uid'],
-      displayName: json['data']['display_name'],
-      email: json['data']['email'],
-      phone: json['data']['phone'],
+      id: json['uid'],
+      displayName: json['display_name'],
+      email: json['email'],
+      phone: json['phone'],
     );
   }
 }

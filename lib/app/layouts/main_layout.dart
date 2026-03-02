@@ -37,7 +37,7 @@ class _MainLayoutState extends State<MainLayout> {
       const HomePage(),
       const BookingPage(),
       BlocProvider(
-        create: (_) => ProfileCubit(repository)..fetchProfile(),
+        create: (_) => ProfileCubit(repository),
         child: const ProfilePage(),
       ),
     ];

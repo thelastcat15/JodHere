@@ -11,6 +11,7 @@ class AppRoutes {
   static const main = '/';
   static const parkingDetail = '/parking-detail';
   static const login = '/login';
+  static const signup = '/signup';
   static const loginCallback = '/login-callback';
 }
 
@@ -29,18 +30,16 @@ class AppRouter {
     }
 
     if (!authService.isLoggedIn) {
-      if (name == AppRoutes.login) {
-        return MaterialPageRoute(builder: (_) => const LoginPage());
-      }
-
       if (name == AppRoutes.loginCallback) {
         final uri = settings.arguments as Uri?;
         return MaterialPageRoute(
           builder: (_) => LoginCallbackPage(callbackUri: uri),
         );
+      } else if (name == AppRoutes.signup) {
+        return MaterialPageRoute(builder: (_) => const SignUpPage());
+      } else {
+        return MaterialPageRoute(builder: (_) => const LoginPage());
       }
-
-      return MaterialPageRoute(builder: (_) => Scaffold(body: SignUpPage()));
     }
 
     switch (settings.name) {

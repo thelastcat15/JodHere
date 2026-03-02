@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:jodhere/features/profile/presentation/cubit/profile_cubit.dart';
 
 class EditAccountDetailsPage extends StatefulWidget {
   const EditAccountDetailsPage({super.key});
@@ -9,21 +11,23 @@ class EditAccountDetailsPage extends StatefulWidget {
 
 class _EditAccountDetailsPageState extends State<EditAccountDetailsPage> {
   final TextEditingController _displayNameController = TextEditingController();
-  final TextEditingController _emailController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    _displayNameController.text = 'สมชาย ใจดี';
-    _emailController.text = 'somchai.jaidee@gmail.com';
-    _phoneController.text = '0812345678';
+
+    final state = context.read<ProfileCubit>().state;
+
+    if (state.profile != null) {
+      _displayNameController.text = state.profile!.displayName;
+      _phoneController.text = state.profile!.phone ?? '';
+    }
   }
 
   @override
   void dispose() {
     _displayNameController.dispose();
-    _emailController.dispose();
     _phoneController.dispose();
     super.dispose();
   }
@@ -42,8 +46,15 @@ class _EditAccountDetailsPageState extends State<EditAccountDetailsPage> {
                 children: [
                   _buildTextField('Display Name', _displayNameController),
                   _buildTextField('Phone', _phoneController),
-                  _buildTextField('Email', _emailController),
-                  FilledButton(onPressed: () {}, child: const Text('แก้ไข')),
+                  FilledButton(onPressed: () {
+                    context.read<ProfileCubit>().updateProfile(
+                          displayName: _displayNameController.text,
+                          phone: _phoneController.text.isEmpty
+                              ? null
+                              : _phoneController.text,
+                        );
+                    Navigator.pop(context);
+                  }, child: const Text('บันทึก')),
                 ],
               ),
             ),
