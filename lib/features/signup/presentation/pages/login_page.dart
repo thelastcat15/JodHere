@@ -97,66 +97,66 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 ),
                 const SizedBox(height: 32),
-                    // Login Button
-                    SizedBox(
-                      width: double.infinity,
-                      height: 56,
-                      child: ElevatedButton(
-                        onPressed: () async {
-                          if (!_formKey.currentState!.validate()) return;
+                // Login Button
+                SizedBox(
+                  width: double.infinity,
+                  height: 56,
+                  child: ElevatedButton(
+                    onPressed: () async {
+                      if (!_formKey.currentState!.validate()) return;
 
-                          final email = _emailController.text.trim();
-                          final password = _passwordController.text;
+                      final email = _emailController.text.trim();
+                      final password = _passwordController.text;
 
-                          final supabase = Supabase.instance.client;
+                      final supabase = Supabase.instance.client;
 
-                          // เก็บ reference ก่อน await
-                          final messenger = ScaffoldMessenger.of(context);
-                          final navigator = Navigator.of(context);
+                      // เก็บ reference ก่อน await
+                      final messenger = ScaffoldMessenger.of(context);
+                      final navigator = Navigator.of(context);
 
-                          try {
-                            final res = await supabase.auth.signInWithPassword(
-                              email: email,
-                              password: password,
-                            );
+                      try {
+                        final res = await supabase.auth.signInWithPassword(
+                          email: email,
+                          password: password,
+                        );
 
-                            if (!context.mounted) return;
+                        if (!context.mounted) return;
 
-                            if (res.user != null) {
-                              messenger.showSnackBar(
-                                const SnackBar(content: Text('Logged in!')),
-                              );
-                              navigator.pushReplacementNamed('/');
-                              return;
-                            }
+                        if (res.user != null) {
+                          messenger.showSnackBar(
+                            const SnackBar(content: Text('Logged in!')),
+                          );
+                          navigator.pushReplacementNamed('/');
+                          return;
+                        }
 
-                            messenger.showSnackBar(
-                              const SnackBar(content: Text('Login failed')),
-                            );
-                          } catch (e) {
-                            if (!context.mounted) return;
+                        messenger.showSnackBar(
+                          const SnackBar(content: Text('Login failed')),
+                        );
+                      } catch (e) {
+                        if (!context.mounted) return;
 
-                            messenger.showSnackBar(
-                              SnackBar(content: Text('Login error: $e')),
-                            );
-                          }
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF6B46C1),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(30),
-                          ),
-                        ),
-                        child: const Text(
-                          'LOGIN',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
+                        messenger.showSnackBar(
+                          SnackBar(content: Text('Login error: $e')),
+                        );
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF6B46C1),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30),
                       ),
                     ),
+                    child: const Text(
+                      'LOGIN',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
                 const SizedBox(height: 24),
                 // Google Sign-in Button (uses Supabase OAuth)
                 SizedBox(
@@ -191,13 +191,11 @@ class _LoginPageState extends State<LoginPage> {
                         borderRadius: BorderRadius.circular(30),
                       ),
                     ),
-                    icon: const Icon(
-                      Icons.login,
-                      color: Color(0xFF6B46C1),
-                    ),
+                    icon: const Icon(Icons.login, color: Color(0xFF6B46C1)),
                     label: const Text(
                       'Sign in with Google',
                       style: TextStyle(
+                        fontSize: 18,
                         color: Color(0xFF6B46C1),
                         fontWeight: FontWeight.bold,
                       ),
