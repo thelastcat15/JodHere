@@ -50,7 +50,12 @@ class AppRouter {
         final args = settings.arguments as ParkingDetailArgs;
 
         return MaterialPageRoute(
-          builder: (_) => ParkingBookingPage(parkingId: args.parkingId),
+          builder: (_) => ParkingBookingPage(
+            parkingId: args.parkingId,
+            title: args.title,
+            rating: args.rating,
+            price: args.price,
+          ),
         );
 
       default:
@@ -130,8 +135,6 @@ class _LoginCallbackPageState extends State<LoginCallbackPage> {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(child: CircularProgressIndicator()),
-    );
+    return const Scaffold(body: Center(child: CircularProgressIndicator()));
   }
 }

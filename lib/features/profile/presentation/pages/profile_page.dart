@@ -13,7 +13,6 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-
   @override
   void initState() {
     super.initState();
@@ -25,7 +24,6 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget build(BuildContext context) {
     return BlocBuilder<ProfileCubit, ProfileState>(
       builder: (context, state) {
-
         if (state.status == ProfileStatus.loading) {
           return const Scaffold(
             body: Center(child: CircularProgressIndicator()),
@@ -40,9 +38,7 @@ class _ProfilePageState extends State<ProfilePage> {
           );
         }
 
-        if (state.status == ProfileStatus.loaded &&
-            state.profile != null) {
-
+        if (state.status == ProfileStatus.loaded && state.profile != null) {
           final profile = state.profile!;
 
           return Scaffold(
@@ -53,7 +49,6 @@ class _ProfilePageState extends State<ProfilePage> {
                     padding: const EdgeInsets.all(16.0),
                     child: Column(
                       children: [
-
                         /// Profile Picture
                         Stack(
                           alignment: Alignment.bottomRight,
@@ -113,11 +108,15 @@ class _ProfilePageState extends State<ProfilePage> {
                     padding: const EdgeInsets.symmetric(horizontal: 8.0),
                     children: [
                       ListTile(
-                        leading: const Icon(Icons.person_outline,
-                            color: Colors.grey),
+                        leading: const Icon(
+                          Icons.person_outline,
+                          color: Colors.grey,
+                        ),
                         title: const Text('แก้ไขข้อมูลส่วนตัว'),
-                        trailing: const Icon(Icons.chevron_right,
-                            color: Colors.grey),
+                        trailing: const Icon(
+                          Icons.chevron_right,
+                          color: Colors.grey,
+                        ),
                         onTap: () {
                           Navigator.push(
                             context,
@@ -134,17 +133,16 @@ class _ProfilePageState extends State<ProfilePage> {
 
                       /// Logout
                       ListTile(
-                        leading:
-                            const Icon(Icons.logout, color: Colors.grey),
+                        leading: const Icon(Icons.logout, color: Colors.grey),
                         title: const Text('ออกจากระบบ'),
-                        trailing: const Icon(Icons.chevron_right,
-                            color: Colors.grey),
+                        trailing: const Icon(
+                          Icons.chevron_right,
+                          color: Colors.grey,
+                        ),
                         onTap: () async {
                           final navigator = Navigator.of(context);
 
-                          await Supabase
-                              .instance.client.auth
-                              .signOut();
+                          await Supabase.instance.client.auth.signOut();
 
                           if (!context.mounted) return;
 
@@ -160,9 +158,7 @@ class _ProfilePageState extends State<ProfilePage> {
         }
 
         /// 💤 Initial state
-        return const Scaffold(
-          body: Center(child: Text("No Data")),
-        );
+        return const Scaffold(body: Center(child: Text("No Data")));
       },
     );
   }

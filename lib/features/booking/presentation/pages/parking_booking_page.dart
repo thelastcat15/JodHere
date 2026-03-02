@@ -7,11 +7,17 @@ import 'package:jodhere/features/booking/domain/value_objects/parking_id.dart';
 import 'package:jodhere/features/booking/presentation/widgets/booking_summary_sheet.dart';
 
 class ParkingBookingPage extends StatefulWidget {
+  final String title;
+  final String rating;
+  final String price;
   final String parkingId;
 
   const ParkingBookingPage({
     super.key,
     required this.parkingId,
+    required this.title,
+    required this.rating,
+    required this.price,
   });
 
   @override
@@ -20,7 +26,7 @@ class ParkingBookingPage extends StatefulWidget {
 
 class _ParkingBookingPageState extends State<ParkingBookingPage> {
   late final GetBookingPreview _getPreview;
-  final String _selectedZone = 'A';
+  String _selectedZone = 'A';
 
   @override
   void initState() {
@@ -43,39 +49,117 @@ class _ParkingBookingPageState extends State<ParkingBookingPage> {
 
           final preview = snapshot.data!;
 
-          return GridView.builder(
-            padding: const EdgeInsets.all(16),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              mainAxisSpacing: 12,
-              crossAxisSpacing: 12,
-            ),
-            itemCount: preview.spots.length,
-            itemBuilder: (context, index) {
-              final spot = preview.spots[index];
-
-              return GestureDetector(
-                onTap: spot.available
-                    ? () => _openSummary(preview, spot.number)
-                    : null,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: spot.available ? Colors.white : Colors.grey[300],
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey),
-                  ),
-                  child: Center(
-                    child: Text(
-                      spot.number,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
+          return Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.title,
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(
+                              Icons.star,
+                              size: 16,
+                              color: Colors.orange,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              widget.rating,
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                                fontSize: 14,
+                              ),
+                            ),
+                            Text(
+                              ' • ว่าง 3 ที่',
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 16),
+                        Text(
+                          widget.price,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
+                    DropdownMenu(
+                      dropdownMenuEntries: [
+                        DropdownMenuEntry(value: 'A', label: 'Zone A'),
+                        DropdownMenuEntry(value: 'B', label: 'Zone B'),
+                        DropdownMenuEntry(value: 'C', label: 'Zone C'),
+                        DropdownMenuEntry(value: 'D', label: 'Zone D'),
+                      ],
+                      initialSelection: _selectedZone,
+                      onSelected: (value) {
+                        setState(() {
+                          _selectedZone = value ?? _selectedZone;
+                        });
+                      },
+                    ),
+                  ],
                 ),
-              );
-            },
+              ),
+              SizedBox(height: 16),
+              Expanded(
+                child: GridView.builder(
+                  padding: const EdgeInsets.all(16),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    mainAxisSpacing: 12,
+                    crossAxisSpacing: 12,
+                    childAspectRatio: 3,
+                  ),
+                  itemCount: preview.spots.length,
+                  itemBuilder: (context, index) {
+                    final spot = preview.spots[index];
+
+                    return GestureDetector(
+                      onTap: spot.available
+                          ? () => _openSummary(preview, spot.number)
+                          : null,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: spot.available
+                              ? Colors.white
+                              : Colors.grey[300],
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.grey),
+                        ),
+                        child: Center(
+                          child: Text(
+                            spot.number,
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
           );
         },
       ),
