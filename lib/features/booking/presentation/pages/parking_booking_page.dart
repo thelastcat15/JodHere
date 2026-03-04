@@ -26,7 +26,7 @@ class ParkingBookingPage extends StatefulWidget {
 
 class _ParkingBookingPageState extends State<ParkingBookingPage> {
   late final GetBookingPreview _getPreview;
-  String _selectedZone = 'A';
+  String? _selectedZone;
 
   @override
   void initState() {
@@ -48,77 +48,81 @@ class _ParkingBookingPageState extends State<ParkingBookingPage> {
           }
 
           final preview = snapshot.data!;
+          Set zones = <String>{};
+
+          for (var spot in preview.spots) {
+            zones.add(spot.zone);
+
+            if (_selectedZone == null && spot.available) {
+              _selectedZone = spot.zone;
+            }
+          }
 
           return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    Text(
+                      widget.title,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
                       children: [
+                        const Icon(Icons.star, size: 16, color: Colors.orange),
+                        const SizedBox(width: 4),
                         Text(
-                          widget.title,
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
+                          widget.rating,
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 14,
                           ),
                         ),
-                        const SizedBox(height: 8),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(
-                              Icons.star,
-                              size: 16,
-                              color: Colors.orange,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              widget.rating,
-                              style: TextStyle(
-                                color: Colors.grey[600],
-                                fontSize: 14,
-                              ),
-                            ),
-                            Text(
-                              ' • ว่าง 3 ที่',
-                              style: TextStyle(
-                                color: Colors.grey[600],
-                                fontSize: 14,
-                              ),
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: 16),
                         Text(
-                          widget.price,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
+                          ' • ว่าง 3 ที่',
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 14,
                           ),
                         ),
                       ],
                     ),
-                    DropdownMenu(
-                      dropdownMenuEntries: [
-                        DropdownMenuEntry(value: 'A', label: 'Zone A'),
-                        DropdownMenuEntry(value: 'B', label: 'Zone B'),
-                        DropdownMenuEntry(value: 'C', label: 'Zone C'),
-                        DropdownMenuEntry(value: 'D', label: 'Zone D'),
-                      ],
-                      initialSelection: _selectedZone,
-                      onSelected: (value) {
-                        setState(() {
-                          _selectedZone = value ?? _selectedZone;
-                        });
-                      },
+                    SizedBox(height: 8),
+                    Text(
+                      widget.price,
+                      style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(height: 16),
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: List.generate(zones.length, (int index) {
+                          return ChoiceChip(
+                            label: Text('Zone ${zones.elementAt(index)}'),
+                            selected: _selectedZone == zones.elementAt(index),
+                            onSelected: (selected) => setState(
+                              () => _selectedZone = selected
+                                  ? zones.elementAt(index)
+                                  : _selectedZone,
+                            ),
+                          );
+                        }).toList(),
+                      ),
                     ),
                   ],
                 ),
               ),
+
               SizedBox(height: 16),
               Expanded(
                 child: GridView.builder(
@@ -129,13 +133,18 @@ class _ParkingBookingPageState extends State<ParkingBookingPage> {
                     crossAxisSpacing: 12,
                     childAspectRatio: 3,
                   ),
-                  itemCount: preview.spots.length,
+                  itemCount: preview.spots
+                      .where((spot) => spot.zone == _selectedZone)
+                      .length,
                   itemBuilder: (context, index) {
-                    final spot = preview.spots[index];
+                    final filteredSpots = preview.spots
+                        .where((spot) => spot.zone == _selectedZone)
+                        .toList();
+                    final spot = filteredSpots[index];
 
                     return GestureDetector(
                       onTap: spot.available
-                          ? () => _openSummary(preview, spot.number)
+                          ? () => _openSummary(preview, spot.zone, spot.number)
                           : null,
                       child: Container(
                         decoration: BoxDecoration(
@@ -166,12 +175,12 @@ class _ParkingBookingPageState extends State<ParkingBookingPage> {
     );
   }
 
-  void _openSummary(BookingPreview preview, String spotNumber) {
+  void _openSummary(BookingPreview preview, String zone, String spotNumber) {
     showModalBottomSheet(
       context: context,
       builder: (_) => BookingSummarySheet(
         preview: preview,
-        zone: _selectedZone,
+        zone: zone,
         spotNumber: spotNumber,
       ),
     );

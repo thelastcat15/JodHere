@@ -19,6 +19,7 @@ class BookingPreview {
     double? ratePerHour,
     double? otherFee,
     List<ParkingSpot>? spots,
+    String? zone,
   }) {
     return BookingPreview(
       ratePerHour: ratePerHour ?? this.ratePerHour,

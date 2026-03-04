@@ -9,10 +9,10 @@ class BookingMockDataSource {
       ratePerHour: 100,
       otherFee: 405,
       spots: [
-        ParkingSpotModel(number: '123', available: true),
-        ParkingSpotModel(number: '124', available: false),
-        ParkingSpotModel(number: '125', available: true),
-        ParkingSpotModel(number: '126', available: true),
+        ParkingSpotModel(number: '123', available: true, zone: 'A'),
+        ParkingSpotModel(number: '124', available: false, zone: 'B'),
+        ParkingSpotModel(number: '125', available: true, zone: 'B'),
+        ParkingSpotModel(number: '126', available: true, zone: 'C'),
       ],
     );
   }

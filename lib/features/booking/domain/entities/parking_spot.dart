@@ -4,19 +4,19 @@ import 'package:flutter/foundation.dart';
 class ParkingSpot {
   final String number;
   final bool available;
+  final String zone;
 
   const ParkingSpot({
     required this.number,
     required this.available,
+    required this.zone,
   });
 
-  ParkingSpot copyWith({
-    String? number,
-    bool? available,
-  }) {
+  ParkingSpot copyWith({String? number, bool? available, String? zone}) {
     return ParkingSpot(
       number: number ?? this.number,
       available: available ?? this.available,
+      zone: zone ?? this.zone,
     );
   }
 

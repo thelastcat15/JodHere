@@ -4,5 +4,6 @@ class ParkingSpotModel extends ParkingSpot {
   const ParkingSpotModel({
     required super.number,
     required super.available,
+    required super.zone,
   });
 }
