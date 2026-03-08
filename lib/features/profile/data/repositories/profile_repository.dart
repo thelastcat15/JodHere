@@ -1,4 +1,5 @@
 import 'package:jodhere/core/api/api_client.dart';
+import 'package:jodhere/features/profile/data/models/delete_profile_model.dart';
 import 'package:jodhere/features/profile/data/models/profile_model.dart';
 
 class ProfileRepository {
@@ -23,5 +24,13 @@ class ProfileRepository {
     final response = await _apiClient.put('/profile', body: body);
 
     return ProfileModel.fromJson(response['data']);
+  }
+
+  Future<DeleteProfileModel> deleteProfile() async {
+    final body = <String, dynamic>{};
+
+    final response = await _apiClient.delete('/profile', body: body);
+
+    return DeleteProfileModel.fromJson(response);
   }
 }

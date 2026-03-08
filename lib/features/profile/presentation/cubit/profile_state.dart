@@ -1,8 +1,7 @@
 import 'package:jodhere/features/profile/data/models/profile_model.dart';
 
+enum ProfileStatus { initial, loading, loaded, error, deleted }
 
-
-enum ProfileStatus { initial, loading, loaded, error }
 class ProfileState {
   final ProfileStatus status;
   final ProfileModel? profile;

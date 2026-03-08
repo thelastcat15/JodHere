@@ -22,7 +22,18 @@ class _ProfilePageState extends State<ProfilePage> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<ProfileCubit, ProfileState>(
+    return BlocConsumer<ProfileCubit, ProfileState>(
+      listener: (context, state) async {
+        if (state.status == ProfileStatus.deleted) {
+          await Supabase.instance.client.auth.signOut();
+
+          if (!context.mounted) return;
+
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text("ลบบัญชีเรียบร้อย")));
+        }
+      },
       builder: (context, state) {
         if (state.status == ProfileStatus.loading) {
           return const Scaffold(
@@ -130,6 +141,51 @@ class _ProfilePageState extends State<ProfilePage> {
                         },
                       ),
                       const Divider(height: 1),
+
+                      /// Delete Profile
+                      ListTile(
+                        leading: const Icon(Icons.delete, color: Colors.grey),
+                        title: const Text('ลบบัญชี'),
+                        trailing: const Icon(
+                          Icons.chevron_right,
+                          color: Colors.grey,
+                        ),
+                        onTap: () async {
+                          final confirmed = await showDialog<bool>(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                              title: const Text("ยืนยันการลบบัญชี"),
+                              content: const Text(
+                                "คุณต้องการลบบัญชีหรือไม่ หากลบแล้ว คุณจะไม่สามารถกลับมาใช้บัญชีนี้ได้อีก",
+                              ),
+                              actions: [
+                                ElevatedButton(
+                                  onPressed: () =>
+                                      Navigator.of(context).pop(true),
+                                  child: const Text("ยืนยัน"),
+                                ),
+                                ElevatedButton(
+                                  onPressed: () =>
+                                      Navigator.of(context).pop(false),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.deepPurple.shade800,
+                                    foregroundColor: Colors.white,
+                                  ),
+                                  child: const Text("ยกเลิก"),
+                                ),
+                              ],
+                            ),
+                          );
+
+                          if (!context.mounted) return;
+
+                          if (confirmed == true) {
+                            await context.read<ProfileCubit>().deleteProfile();
+                          }
+                        },
+                      ),
+
+                      Divider(height: 1),
 
                       /// Logout
                       ListTile(

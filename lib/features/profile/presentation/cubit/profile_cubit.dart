@@ -2,7 +2,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:jodhere/features/profile/presentation/cubit/profile_state.dart';
 import 'package:jodhere/features/profile/data/repositories/profile_repository.dart';
 
-
 class ProfileCubit extends Cubit<ProfileState> {
   final ProfileRepository _repository;
 
@@ -14,15 +13,11 @@ class ProfileCubit extends Cubit<ProfileState> {
     try {
       final profile = await _repository.fetchProfile();
 
-      emit(state.copyWith(
-        status: ProfileStatus.loaded,
-        profile: profile,
-      ));
+      emit(state.copyWith(status: ProfileStatus.loaded, profile: profile));
     } catch (e) {
-      emit(state.copyWith(
-        status: ProfileStatus.error,
-        errorMessage: e.toString(),
-      ));
+      emit(
+        state.copyWith(status: ProfileStatus.error, errorMessage: e.toString()),
+      );
     }
   }
 
@@ -38,15 +33,36 @@ class ProfileCubit extends Cubit<ProfileState> {
         phone: phone,
       );
 
-      emit(state.copyWith(
-        status: ProfileStatus.loaded,
-        profile: updatedProfile,
-      ));
+      emit(
+        state.copyWith(status: ProfileStatus.loaded, profile: updatedProfile),
+      );
     } catch (e) {
-      emit(state.copyWith(
-        status: ProfileStatus.error,
-        errorMessage: e.toString(),
-      ));
+      emit(
+        state.copyWith(status: ProfileStatus.error, errorMessage: e.toString()),
+      );
+    }
+  }
+
+  Future<void> deleteProfile() async {
+    emit(state.copyWith(status: ProfileStatus.loading));
+
+    try {
+      final deleteResponse = await _repository.deleteProfile();
+
+      if (deleteResponse.success) {
+        emit(state.copyWith(status: ProfileStatus.deleted, profile: null));
+      } else {
+        emit(
+          state.copyWith(
+            status: ProfileStatus.error,
+            errorMessage: 'Profile not found',
+          ),
+        );
+      }
+    } catch (e) {
+      emit(
+        state.copyWith(status: ProfileStatus.error, errorMessage: e.toString()),
+      );
     }
   }
 }
