@@ -1,23 +1,20 @@
 import 'package:flutter/material.dart';
-import 'package:jodhere/features/booking/data/datasources/booking_mock_datasource.dart';
-import 'package:jodhere/features/booking/data/repositories/booking_repository_impl.dart';
-import 'package:jodhere/features/booking/domain/entities/booking_preview.dart';
-import 'package:jodhere/features/booking/domain/usecases/get_booking_preview.dart';
-import 'package:jodhere/features/booking/domain/value_objects/parking_id.dart';
-import 'package:jodhere/features/booking/presentation/widgets/booking_summary_sheet.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:jodhere/features/booking/presentation/cubit/parking_detail_cubit.dart';
+import 'package:jodhere/features/booking/presentation/cubit/parking_detail_state.dart';
+import 'package:jodhere/features/booking/presentation/cubit/slot_cubit.dart';
+import 'package:jodhere/features/booking/presentation/cubit/slot_state.dart';
+import 'package:jodhere/features/booking/presentation/cubit/booking_cubit.dart';
+import 'package:jodhere/features/booking/presentation/cubit/booking_state.dart';
 
 class ParkingBookingPage extends StatefulWidget {
   final String title;
-  final String rating;
-  final String price;
   final String parkingId;
 
   const ParkingBookingPage({
     super.key,
     required this.parkingId,
     required this.title,
-    required this.rating,
-    required this.price,
   });
 
   @override
@@ -25,163 +22,250 @@ class ParkingBookingPage extends StatefulWidget {
 }
 
 class _ParkingBookingPageState extends State<ParkingBookingPage> {
-  late final GetBookingPreview _getPreview;
-  String? _selectedZone;
+  String? _selectedZoneId;
+  final DateTime _selectedTime = DateTime.now();
 
   @override
   void initState() {
     super.initState();
-    _getPreview = GetBookingPreview(
-      BookingRepositoryImpl(BookingMockDataSource()),
-    );
+    // Load parking details when page initializes
+    context.read<ParkingDetailCubit>().getParkingDetail(widget.parkingId);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('เลือกที่จอด')),
-      body: FutureBuilder<BookingPreview>(
-        future: _getPreview(ParkingId(widget.parkingId)),
-        builder: (context, snapshot) {
-          if (!snapshot.hasData) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          final preview = snapshot.data!;
-          Set zones = <String>{};
-
-          for (var spot in preview.spots) {
-            zones.add(spot.zone);
-
-            if (_selectedZone == null && spot.available) {
-              _selectedZone = spot.zone;
+      body: MultiBlocListener(
+        listeners: [
+          BlocListener<ParkingDetailCubit, ParkingDetailState>(
+            listener: (context, state) {
+              if (state is ParkingDetailLoaded) {
+                // Auto-select first zone and load its slots if not already selected
+                if (_selectedZoneId == null && state.parkingDetail.zones.isNotEmpty) {
+                  final firstZoneId = state.parkingDetail.zones.first.id;
+                  setState(() {
+                    _selectedZoneId = firstZoneId;
+                  });
+                  // Automatically load slots for the first zone
+                  context.read<SlotCubit>().getParkingSlots(
+                        widget.parkingId,
+                        firstZoneId,
+                      );
+                }
+              }
+            },
+          ),
+          BlocListener<BookingCubit, BookingState>(
+            listener: (context, state) {
+              if (state is BookingCreated) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('การจองสำเร็จ!')),
+                );
+                // Navigate back to booking page or home
+                Navigator.of(context).popUntil((route) => route.isFirst);
+              } else if (state is BookingError) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('เกิดข้อผิดพลาด: ${state.message}')),
+                );
+              }
+            },
+          ),
+        ],
+        child: BlocBuilder<ParkingDetailCubit, ParkingDetailState>(
+          builder: (context, state) {
+            if (state is ParkingDetailLoading && _selectedZoneId == null) {
+              return const Center(child: CircularProgressIndicator());
             }
-          }
 
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            if (state is ParkingDetailError) {
+              return Center(
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(
-                      widget.title,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        const Icon(Icons.star, size: 16, color: Colors.orange),
-                        const SizedBox(width: 4),
-                        Text(
-                          widget.rating,
-                          style: TextStyle(
-                            color: Colors.grey[600],
-                            fontSize: 14,
-                          ),
-                        ),
-                        Text(
-                          ' • ว่าง 3 ที่',
-                          style: TextStyle(
-                            color: Colors.grey[600],
-                            fontSize: 14,
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 8),
-                    Text(
-                      widget.price,
-                      style: const TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    SizedBox(height: 16),
-                    SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        children: List.generate(zones.length, (int index) {
-                          return ChoiceChip(
-                            label: Text('Zone ${zones.elementAt(index)}'),
-                            selected: _selectedZone == zones.elementAt(index),
-                            onSelected: (selected) => setState(
-                              () => _selectedZone = selected
-                                  ? zones.elementAt(index)
-                                  : _selectedZone,
-                            ),
-                          );
-                        }).toList(),
-                      ),
+                    Text('เกิดข้อผิดพลาด: ${state.message}'),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: () {
+                        context.read<ParkingDetailCubit>().getParkingDetail(widget.parkingId);
+                      },
+                      child: const Text('ลองใหม่อีกครั้ง'),
                     ),
                   ],
                 ),
-              ),
+              );
+            }
 
-              SizedBox(height: 16),
-              Expanded(
-                child: GridView.builder(
-                  padding: const EdgeInsets.all(16),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    mainAxisSpacing: 12,
-                    crossAxisSpacing: 12,
-                    childAspectRatio: 3,
-                  ),
-                  itemCount: preview.spots
-                      .where((spot) => spot.zone == _selectedZone)
-                      .length,
-                  itemBuilder: (context, index) {
-                    final filteredSpots = preview.spots
-                        .where((spot) => spot.zone == _selectedZone)
-                        .toList();
-                    final spot = filteredSpots[index];
+            if (state is! ParkingDetailLoaded) {
+              return const Center(child: CircularProgressIndicator());
+            }
 
-                    return GestureDetector(
-                      onTap: spot.available
-                          ? () => _openSummary(preview, spot.zone, spot.number)
-                          : null,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: spot.available
-                              ? Colors.white
-                              : Colors.grey[300],
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.grey),
-                        ),
-                        child: Center(
-                          child: Text(
-                            spot.number,
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
+            final parking = state.parkingDetail;
+            final zones = parking.zones;
+
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        widget.title,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
-                    );
-                  },
+                      const SizedBox(height: 8),
+                      Text(
+                        '${zones.length} โซน • ${parking.description}',
+                        style: TextStyle(
+                          color: Colors.grey[600],
+                          fontSize: 14,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Builder(
+                        builder: (context) {
+                          final selectedZone = zones.firstWhere(
+                            (zone) => zone.id == _selectedZoneId,
+                            orElse: () => zones.first,
+                          );
+                          return Text(
+                            '฿${selectedZone.hourRate.toStringAsFixed(0)}/ชม.',
+                            style: const TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      // Zone selection chips
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: zones
+                              .map(
+                                (zone) => Padding(
+                                  padding: const EdgeInsets.only(right: 8.0),
+                                  child: ChoiceChip(
+                                    label: Text(zone.name),
+                                    selected: _selectedZoneId == zone.id,
+                                    onSelected: (selected) {
+                                      setState(() {
+                                        if (selected) {
+                                          _selectedZoneId = zone.id;
+                                          // Load slots when zone is selected
+                                          context.read<SlotCubit>().getParkingSlots(
+                                                widget.parkingId,
+                                                zone.id,
+                                              );
+                                        }
+                                      });
+                                    },
+                                  ),
+                                ),
+                              )
+                              .toList(),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
-          );
-        },
-      ),
-    );
-  }
+                const SizedBox(height: 16),
+                // Slots display
+                Expanded(
+                  child: _selectedZoneId != null
+                      ? BlocBuilder<SlotCubit, SlotState>(
+                          builder: (context, slotState) {
+                          if (slotState is SlotLoading) {
+                              return const Center(child: CircularProgressIndicator());
+                            }
 
-  void _openSummary(BookingPreview preview, String zone, String spotNumber) {
-    showModalBottomSheet(
-      context: context,
-      builder: (_) => BookingSummarySheet(
-        preview: preview,
-        zone: zone,
-        spotNumber: spotNumber,
+                            if (slotState is SlotLoaded) {
+                              final slots = slotState.slots;
+                              final availableSlots =
+                                  slots.where((s) => (s.status) == 'available').toList();
+
+                              if (availableSlots.isEmpty) {
+                                return const Center(
+                                  child: Text('ไม่มีช่องจอดรถว่าง'),
+                                );
+                              }
+
+                              return GridView.builder(
+                                padding: const EdgeInsets.all(16),
+                                gridDelegate:
+                                    const SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 3,
+                                  mainAxisSpacing: 12,
+                                  crossAxisSpacing: 12,
+                                  childAspectRatio: 1,
+                                ),
+                                itemCount: availableSlots.length,
+                                itemBuilder: (context, index) {
+                                  final slot = availableSlots[index];
+
+                                  return GestureDetector(
+                                    onTap: () {
+                                      // Immediately create booking when slot is tapped
+                                      context.read<BookingCubit>().createBooking(
+                                            parkingId: widget.parkingId,
+                                            zoneId: _selectedZoneId!,
+                                            slotId: slot.id,
+                                            start: _selectedTime,
+                                          );
+                                    },
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        color: slot.status == 'available'
+                                            ? Colors.green[50]
+                                            : Colors.grey[300],
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(
+                                          color: slot.status == 'available'
+                                              ? Colors.green
+                                              : Colors.grey,
+                                          width: 2,
+                                        ),
+                                      ),
+                                      child: Center(
+                                        child: Text(
+                                          slot.name,
+                                          style: const TextStyle(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              );
+                            }
+
+                            if (slotState is SlotError) {
+                              return Center(
+                                child: Text('เกิดข้อผิดพลาด: ${slotState.message}'),
+                              );
+                            }
+
+                            return const Center(
+                              child: Text('เลือกโซนเพื่อแสดงช่องจอดรถ'),
+                            );
+                          },
+                        )
+                      : const Center(
+                          child: Text('เลือกโซนเพื่อเริ่มต้น'),
+                        ),
+                ),
+              ],
+            );
+          },
+        ),
       ),
     );
   }
@@ -189,486 +273,3 @@ class _ParkingBookingPageState extends State<ParkingBookingPage> {
 
 
 
-// class ParkingBookingPage extends StatefulWidget {
-//   final String parkingId;
-
-//   const ParkingBookingPage({super.key, required this.parkingId});
-
-//   @override
-//   State<ParkingBookingPage> createState() => _ParkingBookingPageState();
-// }
-
-// class _ParkingBookingPageState extends State<ParkingBookingPage> {
-//   String _selectedZone = 'A';
-  
-//   // Booking details (mock data)
-//   final String _checkInDate = '15/03/25';
-//   final String _checkOutDate = '15/03/25';
-//   final String _checkInTime = '9:00';
-//   final String _checkOutTime = '18:00';
-//   final double _ratePerHour = 100.0;
-//   final double _otherFee = 405.0;
-
-//   // Mock parking spots data
-//   final List<Map<String, dynamic>> _parkingSpots = [
-//     {'number': '123', 'available': true},
-//     {'number': '124', 'available': false},
-//     {'number': '134', 'available': true},
-//     {'number': '135', 'available': true},
-//     {'number': '126', 'available': true},
-//     {'number': '127', 'available': true},
-//     {'number': '128', 'available': false},
-//     {'number': '129', 'available': true},
-//   ];
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       backgroundColor: Colors.grey[50],
-//       appBar: AppBar(
-//         backgroundColor: Colors.deepPurple[800],
-//         elevation: 0,
-//         leading: IconButton(
-//           icon: const Icon(Icons.arrow_back, color: Colors.white),
-//           onPressed: () => Navigator.pop(context),
-//         ),
-//         title: const Text(
-//           'ParkEasy',
-//           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20),
-//         ),
-//       ),
-//       body: SingleChildScrollView(
-//         child: Column(
-//           crossAxisAlignment: CrossAxisAlignment.start,
-//           children: [
-//             // Parking Lot Image Placeholder
-//             ClipRRect(
-//               borderRadius: const BorderRadius.vertical(bottom: Radius.circular(20)),
-//               child: Container(
-//                 height: 200,
-//                 width: double.infinity,
-//                 color: Colors.grey[200],
-//                 child: Stack(
-//                   children: [
-//                     Center(child: Icon(Icons.location_city, size: 80, color: Colors.grey[400])),
-//                     Positioned(
-//                       top: 80,
-//                       left: 150,
-//                       child: Icon(Icons.location_on, color: Colors.deepPurple[800], size: 40),
-//                     ),
-//                   ],
-//                 ),
-//               ),
-//             ),
-
-//             // Parking Lot Info
-//             Padding(
-//               padding: const EdgeInsets.all(16.0),
-//               child: Column(
-//                 crossAxisAlignment: CrossAxisAlignment.start,
-//                 children: [
-//                   Row(
-//                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//                     children: [
-//                       Expanded(
-//                         child: Column(
-//                           crossAxisAlignment: CrossAxisAlignment.start,
-//                           children: [
-//                             Text(
-//                               widget.name,
-//                               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-//                             ),
-//                             const SizedBox(height: 4),
-//                             Text(
-//                               widget.location,
-//                               style: TextStyle(color: Colors.grey[600], fontSize: 13),
-//                             ),
-//                           ],
-//                         ),
-//                       ),
-//                       Container(
-//                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-//                         decoration: BoxDecoration(
-//                           color: Colors.yellow[100],
-//                           borderRadius: BorderRadius.circular(20),
-//                         ),
-//                         child: Row(
-//                           children: [
-//                             const Icon(Icons.star, color: Colors.orange, size: 16),
-//                             const SizedBox(width: 4),
-//                             Text(widget.rating.toString(), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-//                           ],
-//                         ),
-//                       ),
-//                     ],
-//                   ),
-//                   const SizedBox(height: 12),
-//                   Row(
-//                     children: [
-//                       Icon(Icons.location_on_outlined, size: 16, color: Colors.grey[600]),
-//                       const SizedBox(width: 4),
-//                       Text(widget.distance, style: TextStyle(color: Colors.grey[600], fontSize: 12)),
-//                       const SizedBox(width: 16),
-//                       Icon(Icons.payments_outlined, size: 16, color: Colors.grey[600]),
-//                       const SizedBox(width: 4),
-//                       Text(widget.price, style: TextStyle(color: Colors.grey[600], fontSize: 12)),
-//                     ],
-//                   ),
-//                   const SizedBox(height: 24),
-
-//                   // Zone Selection
-//                   const Text('เลือกโซน', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-//                   const SizedBox(height: 12),
-//                   SingleChildScrollView(
-//                     scrollDirection: Axis.horizontal,
-//                     child: Row(
-//                       children: ['A', 'B', 'C', 'D']
-//                           .map((zone) => Padding(
-//                                 padding: const EdgeInsets.only(right: 12.0),
-//                                 child: GestureDetector(
-//                                   onTap: () => setState(() => _selectedZone = zone),
-//                                   child: Container(
-//                                     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-//                                     decoration: BoxDecoration(
-//                                       color: _selectedZone == zone ? Colors.deepPurple : Colors.white,
-//                                       borderRadius: BorderRadius.circular(20),
-//                                       border: Border.all(
-//                                         color: _selectedZone == zone ? Colors.deepPurple : Colors.grey[300]!,
-//                                       ),
-//                                     ),
-//                                     child: Text(
-//                                       'zone $zone',
-//                                       style: TextStyle(
-//                                         color: _selectedZone == zone ? Colors.white : Colors.black87,
-//                                         fontWeight: FontWeight.w600,
-//                                         fontSize: 13,
-//                                       ),
-//                                     ),
-//                                   ),
-//                                 ),
-//                               ))
-//                           .toList(),
-//                     ),
-//                   ),
-//                   const SizedBox(height: 24),
-
-//                   // Parking Spots Grid
-//                   const Text('เลือกพื้นที่จอด', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-//                   const SizedBox(height: 12),
-//                   GridView.builder(
-//                     shrinkWrap: true,
-//                     physics: const NeverScrollableScrollPhysics(),
-//                     gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-//                       crossAxisCount: 2,
-//                       crossAxisSpacing: 12,
-//                       mainAxisSpacing: 12,
-//                       childAspectRatio: 1.0,
-//                     ),
-//                     itemCount: _parkingSpots.length,
-//                     itemBuilder: (context, index) {
-//                       final spot = _parkingSpots[index];
-//                       final isAvailable = spot['available'];
-
-//                       return GestureDetector(
-//                         onTap: isAvailable
-//                             ? () {
-//                                 _showBookingOverlay(spot['number']);
-//                               }
-//                             : null,
-//                         child: Container(
-//                           decoration: BoxDecoration(
-//                             color: Colors.white,
-//                             borderRadius: BorderRadius.circular(12),
-//                             border: Border.all(
-//                               color: Colors.grey[300]!,
-//                               width: 1,
-//                             ),
-//                             boxShadow: [
-//                               BoxShadow(
-//                                 color: Color(0x0D000000),
-//                                 blurRadius: 4,
-//                                 offset: const Offset(0, 0),
-//                               ),
-//                             ],
-//                           ),
-//                           child: Center(
-//                             child: Column(
-//                               mainAxisAlignment: MainAxisAlignment.center,
-//                               children: [
-//                                 Icon(
-//                                   Icons.directions_car_filled,
-//                                   size: 40,
-//                                   color: isAvailable ? Colors.black54 : Colors.grey[400],
-//                                 ),
-//                                 const SizedBox(height: 8),
-//                                 Text(
-//                                   spot['number'],
-//                                   style: TextStyle(
-//                                     fontWeight: FontWeight.bold,
-//                                     fontSize: 16,
-//                                     color: isAvailable ? Colors.black87 : Colors.grey[400],
-//                                   ),
-//                                 ),
-//                                 const SizedBox(height: 4),
-//                                 Text(
-//                                   isAvailable ? 'Available' : 'Occupied',
-//                                   style: TextStyle(
-//                                     fontSize: 11,
-//                                     color: isAvailable ? Colors.grey[600] : Colors.grey[400],
-//                                   ),
-//                                 ),
-//                               ],
-//                             ),
-//                           ),
-//                         ),
-//                       );
-//                     },
-//                   ),
-//                   const SizedBox(height: 24),
-//                 ],
-//               ),
-//             ),
-//           ],
-//         ),
-//       ),
-//     );
-//   }
-
-//   Future<void> _showBookingOverlay(String spotNumber) async {
-//     await showModalBottomSheet(
-//       context: context,
-//       isScrollControlled: true,
-//       backgroundColor: Colors.white,
-//       shape: const RoundedRectangleBorder(
-//         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-//       ),
-//       builder: (context) {
-//         final totalCost = _ratePerHour + _otherFee;
-//         return Padding(
-//           padding: const EdgeInsets.all(20.0),
-//           child: SingleChildScrollView(
-//             child: Column(
-//               mainAxisSize: MainAxisSize.min,
-//               crossAxisAlignment: CrossAxisAlignment.start,
-//               children: [
-//                 Center(
-//                   child: Container(
-//                     width: 40,
-//                     height: 4,
-//                     decoration: BoxDecoration(
-//                       color: Colors.grey[400],
-//                       borderRadius: BorderRadius.circular(2),
-//                     ),
-//                   ),
-//                 ),
-//                 const SizedBox(height: 20),
-//                 Text(
-//                   'สถานที่: ${widget.name}',
-//                   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-//                 ),
-//                 const SizedBox(height: 20),
-//                 Row(
-//                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//                   children: [
-//                     Column(
-//                       crossAxisAlignment: CrossAxisAlignment.start,
-//                       children: [
-//                         Row(
-//                           children: [
-//                             const Icon(Icons.calendar_today, size: 18, color: Colors.grey),
-//                             const SizedBox(width: 8),
-//                             Text(_checkInDate, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-//                           ],
-//                         ),
-//                         const SizedBox(height: 12),
-//                         Container(
-//                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-//                           decoration: BoxDecoration(
-//                               color: Colors.white,
-//                               borderRadius: BorderRadius.circular(12),
-//                               boxShadow: [
-//                                 BoxShadow(
-//                                   color: Color(0x40000000),
-//                                   blurRadius: 4,
-//                                   offset: Offset(0, 0),
-//                                 ),
-//                               ],
-//                             ),
-//                           child: Row(
-//                             children: [
-//                               const Icon(Icons.access_time, size: 20, color: Colors.black54),
-//                               const SizedBox(width: 8),
-//                               Text(_checkInTime, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-//                             ],
-//                           ),
-//                         ),
-//                       ],
-//                     ),
-//                     const Text('-', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-//                     Column(
-//                       crossAxisAlignment: CrossAxisAlignment.start,
-//                       children: [
-//                         Row(
-//                           children: [
-//                             const Icon(Icons.calendar_today, size: 18, color: Colors.grey),
-//                             const SizedBox(width: 8),
-//                             Text(_checkOutDate, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-//                           ],
-//                         ),
-//                         const SizedBox(height: 12),
-//                         Container(
-//                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-//                           decoration: BoxDecoration(
-//                               color: Colors.white,
-//                               borderRadius: BorderRadius.circular(12),
-//                               boxShadow: [
-//                                 BoxShadow(
-//                                   color: Color(0x40000000),
-//                                   blurRadius: 4,
-//                                   offset: Offset(0, 0),
-//                                 ),
-//                               ],
-//                             ),
-//                           child: Row(
-//                             children: [
-//                               const Icon(Icons.access_time, size: 20, color: Colors.black54),
-//                               const SizedBox(width: 8),
-//                               Text(_checkOutTime, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-//                             ],
-//                           ),
-//                         ),
-//                       ],
-//                     ),
-//                   ],
-//                 ),
-//                 const SizedBox(height: 20),
-//                 Row(
-//                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//                   children: [
-//                     Column(
-//                       crossAxisAlignment: CrossAxisAlignment.start,
-//                       children: [
-//                         Text('อาคาร', style: TextStyle(color: Colors.grey[600], fontSize: 12)),
-//                         const SizedBox(height: 8),
-//                         Container(
-//                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-//                           decoration: BoxDecoration(
-//                             color: Colors.white,
-//                             borderRadius: BorderRadius.circular(12),
-//                             boxShadow: [
-//                               BoxShadow(
-//                                 color: Color(0x40000000),
-//                                 blurRadius: 4,
-//                                 offset: Offset(0, 0),
-//                               ),
-//                             ],
-//                           ),
-//                           child: Text('Zone $_selectedZone', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-//                         ),
-//                       ],
-//                     ),
-//                     Column(
-//                       crossAxisAlignment: CrossAxisAlignment.start,
-//                       children: [
-//                         Text('ที่จอด', style: TextStyle(color: Colors.grey[600], fontSize: 12)),
-//                         const SizedBox(height: 8),
-//                         Container(
-//                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-//                           decoration: BoxDecoration(
-//                             color: Colors.white,
-//                             borderRadius: BorderRadius.circular(12),
-//                             boxShadow: [
-//                               BoxShadow(
-//                                 color: Color(0x40000000),
-//                                 blurRadius: 4,
-//                                 offset: Offset(0, 0),
-//                               ),
-//                             ],
-//                           ),
-//                           child: Text(spotNumber, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-//                         ),
-//                       ],
-//                     ),
-//                   ],
-//                 ),
-//                 const SizedBox(height: 20),
-//                   Container(
-//                   padding: const EdgeInsets.all(16),
-//                   decoration: BoxDecoration(
-//                     color: Colors.white,
-//                     borderRadius: BorderRadius.circular(12),
-//                     boxShadow: [
-//                       BoxShadow(
-//                         color: Color(0x40000000),
-//                         blurRadius: 4,
-//                         offset: Offset(0, 0),
-//                       ),
-//                     ],
-//                   ),
-//                   child: Column(
-//                     children: [
-//                       Row(
-//                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//                         children: [
-//                           Text('ค่าที่จอง :', style: TextStyle(color: Colors.grey[700], fontSize: 14)),
-//                           Text('฿ ${_ratePerHour.toStringAsFixed(0)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-//                         ],
-//                       ),
-//                       const SizedBox(height: 12),
-//                       Row(
-//                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//                         children: [
-//                           Text('ค่าที่จอด :', style: TextStyle(color: Colors.grey[700], fontSize: 14)),
-//                           Text('฿ ${_otherFee.toStringAsFixed(0)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-//                         ],
-//                       ),
-//                       const Divider(height: 16),
-//                       Row(
-//                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//                         children: [
-//                           Text('ยอดรวมสุทธิ :', style: TextStyle(color: Colors.grey[700], fontWeight: FontWeight.w600, fontSize: 14)),
-//                           Text('฿ ${totalCost.toStringAsFixed(0)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black)),
-//                         ],
-//                       ),
-//                     ],
-//                   ),
-//                 ),
-//                 const SizedBox(height: 20),
-//                 SizedBox(
-//                   width: double.infinity,
-//                   height: 48,
-//                   child: ElevatedButton(
-//                     onPressed: () {
-//                       ScaffoldMessenger.of(context).showSnackBar(
-//                         SnackBar(
-//                           content: Text('จองที่จอด $spotNumber ในโซน $_selectedZone สำเร็จ'),
-//                           duration: const Duration(seconds: 2),
-//                         ),
-//                       );
-//                       Navigator.pop(context);
-//                     },
-//                     style: ElevatedButton.styleFrom(
-//                       backgroundColor: Colors.deepPurple[800],
-//                       foregroundColor: Colors.white,
-//                       elevation: 0,
-//                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-//                     ),
-//                     child: const Text('จอง', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-//                   ),
-//                 ),
-//                 const SizedBox(height: 12),
-//                 Center(
-//                   child: TextButton(
-//                     onPressed: () => Navigator.pop(context),
-//                     child: const Text('ยกเลิก', style: TextStyle(color: Colors.grey, fontSize: 14)),
-//                   ),
-//                 ),
-//                 const SizedBox(height: 16),
-//               ],
-//             ),
-//           ),
-//         );
-//       },
-//     );
-//   }
-// }

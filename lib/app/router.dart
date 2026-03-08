@@ -53,8 +53,6 @@ class AppRouter {
           builder: (_) => ParkingBookingPage(
             parkingId: args.parkingId,
             title: args.title,
-            rating: args.rating,
-            price: args.price,
           ),
         );
 
