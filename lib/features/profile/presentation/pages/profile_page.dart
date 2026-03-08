@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:jodhere/features/booking/data/models/booking_model.dart';
+import 'package:jodhere/features/home/presentation/cubit/home_cubit.dart';
+import 'package:jodhere/features/home/presentation/cubit/home_state.dart';
 import 'package:jodhere/features/profile/presentation/pages/edit_account_details_page.dart';
 import 'package:jodhere/features/profile/presentation/cubit/profile_cubit.dart';
 import 'package:jodhere/features/profile/presentation/cubit/profile_state.dart';
@@ -12,12 +15,27 @@ class ProfilePage extends StatefulWidget {
   State<ProfilePage> createState() => _ProfilePageState();
 }
 
-class _ProfilePageState extends State<ProfilePage> {
+class _ProfilePageState extends State<ProfilePage> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
 
     context.read<ProfileCubit>().fetchProfile();
+    context.read<HomeCubit>().fetchBookings();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      context.read<HomeCubit>().refreshBookings();
+    }
   }
 
   @override
@@ -140,6 +158,28 @@ class _ProfilePageState extends State<ProfilePage> {
                           );
                         },
                       ),
+
+                      Divider(height: 1),
+
+                      /// Logout
+                      ListTile(
+                        leading: const Icon(Icons.logout, color: Colors.grey),
+                        title: const Text('ออกจากระบบ'),
+                        trailing: const Icon(
+                          Icons.chevron_right,
+                          color: Colors.grey,
+                        ),
+                        onTap: () async {
+                          final navigator = Navigator.of(context);
+
+                          await Supabase.instance.client.auth.signOut();
+
+                          if (!context.mounted) return;
+
+                          navigator.pushReplacementNamed('/login');
+                        },
+                      ),
+
                       const Divider(height: 1),
 
                       /// Delete Profile
@@ -180,29 +220,33 @@ class _ProfilePageState extends State<ProfilePage> {
                           if (!context.mounted) return;
 
                           if (confirmed == true) {
+                            // ✅ Fetch fresh from server right now
+                            final freshBookings = await context
+                                .read<HomeCubit>()
+                                .fetchBookings();
+
+                            if (!context.mounted) return;
+
+                            final activeBooking = freshBookings
+                                .where(
+                                  (b) =>
+                                      ['PENDING', 'ARRIVED'].contains(b.status),
+                                )
+                                .firstOrNull;
+
+                            debugPrint(activeBooking.toString());
+
+                            if (activeBooking != null) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('กรุณายกเลิกจองก่อนลบบัญชี'),
+                                ),
+                              );
+                              return;
+                            }
+
                             await context.read<ProfileCubit>().deleteProfile();
                           }
-                        },
-                      ),
-
-                      Divider(height: 1),
-
-                      /// Logout
-                      ListTile(
-                        leading: const Icon(Icons.logout, color: Colors.grey),
-                        title: const Text('ออกจากระบบ'),
-                        trailing: const Icon(
-                          Icons.chevron_right,
-                          color: Colors.grey,
-                        ),
-                        onTap: () async {
-                          final navigator = Navigator.of(context);
-
-                          await Supabase.instance.client.auth.signOut();
-
-                          if (!context.mounted) return;
-
-                          navigator.pushReplacementNamed('/login');
                         },
                       ),
                     ],

@@ -1,4 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:jodhere/features/booking/data/models/booking_model.dart';
 import 'package:jodhere/features/booking/data/repositories/booking_repository.dart';
 import 'package:jodhere/features/home/presentation/cubit/home_state.dart';
 
@@ -8,13 +9,15 @@ class HomeCubit extends Cubit<HomeState> {
   HomeCubit(this._repository) : super(HomeInitial());
 
   /// Fetch all bookings
-  Future<void> fetchBookings() async {
+  Future<List<BookingResponse>> fetchBookings() async {
     try {
       emit(HomeLoading());
       final bookings = await _repository.getBookings();
       emit(HomeLoaded(bookings));
+      return bookings;
     } catch (e) {
       emit(HomeError(e.toString()));
+      return [];
     }
   }
 
@@ -29,10 +32,10 @@ class HomeCubit extends Cubit<HomeState> {
 
       // Refresh bookings
       final bookings = await _repository.getBookings();
-      
+
       // Emit cancelled state
       emit(HomeBookingCancelled(bookings, bookingId));
-      
+
       // Then immediately emit loaded state for normal UI
       emit(HomeLoaded(bookings));
     } catch (e) {

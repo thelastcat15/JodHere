@@ -38,7 +38,7 @@ class _MainLayoutState extends State<MainLayout> {
 
     final supabase = Supabase.instance.client;
     final apiClient = ApiClient(supabase);
-    
+
     // Initialize repositories
     final profileRepository = ProfileRepository(apiClient);
     final bookingRepository = BookingRepository(apiClient);
@@ -48,29 +48,21 @@ class _MainLayoutState extends State<MainLayout> {
     _homeCubit = HomeCubit(bookingRepository);
 
     _pages = [
-      BlocProvider.value(
-        value: _homeCubit,
-        child: const HomePage(),
-      ),
+      BlocProvider.value(value: _homeCubit, child: const HomePage()),
       MultiBlocProvider(
         providers: [
-          BlocProvider(
-            create: (_) => ParkingListCubit(parkingRepository),
-          ),
-          BlocProvider(
-            create: (_) => ParkingDetailCubit(parkingRepository),
-          ),
-          BlocProvider(
-            create: (_) => SlotCubit(parkingRepository),
-          ),
-          BlocProvider(
-            create: (_) => BookingCubit(bookingRepository),
-          ),
+          BlocProvider(create: (_) => ParkingListCubit(parkingRepository)),
+          BlocProvider(create: (_) => ParkingDetailCubit(parkingRepository)),
+          BlocProvider(create: (_) => SlotCubit(parkingRepository)),
+          BlocProvider(create: (_) => BookingCubit(bookingRepository)),
         ],
         child: const BookingPage(),
       ),
-      BlocProvider(
-        create: (_) => ProfileCubit(profileRepository),
+      MultiBlocProvider(
+        providers: [
+          BlocProvider(create: (_) => ProfileCubit(profileRepository)),
+          BlocProvider(create: (_) => HomeCubit(bookingRepository)),
+        ],
         child: const ProfilePage(),
       ),
     ];
@@ -101,10 +93,7 @@ class _MainLayoutState extends State<MainLayout> {
       canPop: false,
       child: Scaffold(
         appBar: AppTopBar(),
-        body: IndexedStack(
-          index: _currentIndex,
-          children: _pages,
-        ),
+        body: IndexedStack(index: _currentIndex, children: _pages),
         bottomNavigationBar: AppNavBar(
           currentIndex: _currentIndex,
           onTap: _onNavTap,
