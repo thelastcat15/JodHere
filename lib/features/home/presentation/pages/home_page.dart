@@ -173,7 +173,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       );
     }
 
-    final now = _toGmtPlus7(DateTime.now());
+    final now = DateTime.now();
     // Check if bookedTimeEnd is valid (not a default/null date like 0001-01-01)
     final isValidEndTime = booking.bookedTimeEnd.year > 1900;
     final effectiveEndTime = (['PENDING', 'ARRIVED'].contains(booking.status) || !isValidEndTime) ? now : booking.bookedTimeEnd;
@@ -369,7 +369,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   }
 
   Widget _buildRecentActivityItemFromBooking(BookingResponse booking) {
-    final now = _toGmtPlus7(DateTime.now());
+    final now = DateTime.now();
     // Check if bookedTimeEnd is valid (not a default/null date like 0001-01-01)
     final isValidEndTime = booking.bookedTimeEnd.year > 1900;
     final effectiveEndTime = (['PENDING', 'ARRIVED'].contains(booking.status) || !isValidEndTime) ? now : booking.bookedTimeEnd;
@@ -378,8 +378,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     final minutes = totalMinutes % 60;
     final cost = totalMinutes > 0 ? (booking.hourlyRate / 60) * totalMinutes : 0.0;
     final dateStr = DateFormat('dd MMM yyyy').format(_toGmtPlus7(booking.bookedTimeStart));
+
     
     final durationStr = minutes > 0 ? '$hours ชม. $minutes นาที' : '$hours ชม.';
+    
 
     return _buildRecentActivityItem(
       'จอดรถที่ ${booking.parking.name}',

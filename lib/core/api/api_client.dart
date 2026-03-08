@@ -94,7 +94,8 @@ class ApiClient {
     Map<String, dynamic>? body,
   ) {
     final headers = {
-      "Content-Type": "application/json",
+      "Content-Type": "application/json; charset=utf-8",
+      "Accept": "application/json",
       "Authorization": "Bearer $accessToken",
     };
 
@@ -126,16 +127,17 @@ class ApiClient {
 
   Map<String, dynamic> _handleResponse(http.Response response) {
     final statusCode = response.statusCode;
+    final responseBody = utf8.decode(response.bodyBytes);
 
     if (statusCode >= 200 && statusCode < 300) {
-      if (response.body.isEmpty) {
+      if (responseBody.isEmpty) {
         return {};
       }
-      return jsonDecode(response.body);
+      return jsonDecode(responseBody);
     }
 
     throw Exception(
-      "API Error [$statusCode]: ${response.body}",
+      "API Error [$statusCode]: $responseBody",
     );
   }
 }

@@ -8,6 +8,7 @@ import 'package:jodhere/features/booking/presentation/cubit/booking_cubit.dart';
 import 'package:jodhere/features/booking/presentation/cubit/booking_state.dart';
 import 'package:jodhere/features/booking/data/repositories/booking_repository.dart';
 import 'package:jodhere/core/api/api_client.dart';
+import 'package:jodhere/core/api/api_config.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ParkingBookingPage extends StatefulWidget {
@@ -25,8 +26,25 @@ class ParkingBookingPage extends StatefulWidget {
 }
 
 class _ParkingBookingPageState extends State<ParkingBookingPage> {
+  static const String _mockImageUrl = 'https://picsum.photos/seed/jodhere-parking/1200/800';
+
   String? _selectedZoneId;
   final DateTime _selectedTime = DateTime.now();
+
+  String _resolveImageUrl(String? path) {
+    if (path == null || path.trim().isEmpty) {
+      return _mockImageUrl;
+    }
+
+    final trimmedPath = path.trim();
+    if (trimmedPath.startsWith('http://') || trimmedPath.startsWith('https://')) {
+      return trimmedPath;
+    }
+
+    final base = ApiConfig.baseUrl.replaceFirst('/api/v1', '');
+    final normalizedPath = trimmedPath.startsWith('/') ? trimmedPath : '/$trimmedPath';
+    return '$base$normalizedPath';
+  }
 
   @override
   void initState() {
@@ -231,6 +249,8 @@ class _ParkingBookingPageState extends State<ParkingBookingPage> {
 
             final parking = state.parkingDetail;
             final zones = parking.zones;
+            final firstImagePath = parking.images.isNotEmpty ? parking.images.first.path : null;
+            final imageUrl = _resolveImageUrl(firstImagePath);
 
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -240,6 +260,29 @@ class _ParkingBookingPageState extends State<ParkingBookingPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Image.network(
+                          imageUrl,
+                          height: 160,
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              height: 160,
+                              width: double.infinity,
+                              color: Colors.grey[200],
+                              alignment: Alignment.center,
+                              child: const Icon(
+                                Icons.local_parking,
+                                size: 40,
+                                color: Colors.grey,
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: 12),
                       Text(
                         widget.title,
                         style: const TextStyle(

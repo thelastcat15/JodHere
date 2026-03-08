@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'router.dart';
 
 class JodHereApp extends StatelessWidget {
@@ -13,6 +14,16 @@ class JodHereApp extends StatelessWidget {
       title: 'JodHere',
       debugShowCheckedModeBanner: false,
       navigatorKey: navigatorKey,
+      locale: const Locale('th', 'TH'),
+      supportedLocales: const [
+        Locale('th', 'TH'),
+        Locale('en', 'US'),
+      ],
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
       theme: ThemeData(
         useMaterial3: true,
         primaryColor: Colors.deepPurple,

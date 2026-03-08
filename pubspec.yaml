@@ -30,6 +30,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
   equatable: ^2.0.5
 
   # The following adds the Cupertino Icons font to your application.
@@ -40,7 +42,7 @@ dependencies:
   flutter_bloc: ^8.1.0
   # flutter_web_auth removed due to Android embedding/kotlin issues; using Supabase SDK
   http: ^0.13.6
-  intl: ^0.19.0
+  intl: ^0.20.2
 
 dev_dependencies:
   flutter_test:
