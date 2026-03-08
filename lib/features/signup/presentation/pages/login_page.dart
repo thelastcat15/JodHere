@@ -136,9 +136,20 @@ class _LoginPageState extends State<LoginPage> {
                       } catch (e) {
                         if (!context.mounted) return;
 
-                        messenger.showSnackBar(
-                          SnackBar(content: Text('Login error: $e')),
-                        );
+                        if (e is AuthApiException &&
+                            e.code == 'invalid_credentials') {
+                          messenger.showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                'อีเมลหรือรหัสผ่านไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง',
+                              ),
+                            ),
+                          );
+                        } else {
+                          messenger.showSnackBar(
+                            SnackBar(content: Text('Login error: $e')),
+                          );
+                        }
                       }
                     },
                     style: ElevatedButton.styleFrom(
