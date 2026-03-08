@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:jodhere/features/booking/presentation/cubit/parking_detail_cubit.dart';
 import 'package:jodhere/features/booking/presentation/cubit/parking_detail_state.dart';
@@ -263,62 +264,121 @@ class _ParkingBookingPageState extends State<ParkingBookingPage> {
                     children: [
                       ClipRRect(
                         borderRadius: BorderRadius.circular(12),
-                        child: CachedNetworkImage(
-                          imageUrl: imageUrl,
-                          height: 160,
-                          width: double.infinity,
-                          fit: BoxFit.cover,
-                          httpHeaders: const {
-                            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-                          },
-                          placeholder: (context, url) => Container(
-                            height: 160,
-                            width: double.infinity,
-                            color: Colors.grey[100],
-                            alignment: Alignment.center,
-                            child: const CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.deepPurple,
-                            ),
-                          ),
-                          errorWidget: (context, url, error) {
-                            return Container(
-                              height: 160,
-                              width: double.infinity,
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                  colors: [
-                                    Colors.deepPurple.shade100,
-                                    Colors.deepPurple.shade50,
-                                  ],
-                                ),
-                              ),
-                              alignment: Alignment.center,
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.local_parking,
-                                    size: 48,
-                                    color: Colors.deepPurple.shade300,
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    widget.title,
-                                    style: TextStyle(
-                                      color: Colors.deepPurple.shade700,
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w500,
+                        child: kIsWeb
+                            ? Image.network(
+                                imageUrl,
+                                height: 160,
+                                width: double.infinity,
+                                fit: BoxFit.cover,
+                                webHtmlElementStrategy: WebHtmlElementStrategy.prefer,
+                                loadingBuilder: (context, child, progress) {
+                                  if (progress == null) return child;
+                                  return Container(
+                                    height: 160,
+                                    width: double.infinity,
+                                    color: Colors.grey[100],
+                                    alignment: Alignment.center,
+                                    child: const CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.deepPurple,
                                     ),
-                                    textAlign: TextAlign.center,
+                                  );
+                                },
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Container(
+                                    height: 160,
+                                    width: double.infinity,
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
+                                        colors: [
+                                          Colors.deepPurple.shade100,
+                                          Colors.deepPurple.shade50,
+                                        ],
+                                      ),
+                                    ),
+                                    alignment: Alignment.center,
+                                    child: Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Icon(
+                                          Icons.local_parking,
+                                          size: 48,
+                                          color: Colors.deepPurple.shade300,
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          widget.title,
+                                          style: TextStyle(
+                                            color: Colors.deepPurple.shade700,
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                          textAlign: TextAlign.center,
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                },
+                              )
+                            : CachedNetworkImage(
+                                imageUrl: imageUrl,
+                                height: 160,
+                                width: double.infinity,
+                                fit: BoxFit.cover,
+                                httpHeaders: const {
+                                  'User-Agent':
+                                      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                                },
+                                placeholder: (context, url) => Container(
+                                  height: 160,
+                                  width: double.infinity,
+                                  color: Colors.grey[100],
+                                  alignment: Alignment.center,
+                                  child: const CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.deepPurple,
                                   ),
-                                ],
+                                ),
+                                errorWidget: (context, url, error) {
+                                  return Container(
+                                    height: 160,
+                                    width: double.infinity,
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
+                                        colors: [
+                                          Colors.deepPurple.shade100,
+                                          Colors.deepPurple.shade50,
+                                        ],
+                                      ),
+                                    ),
+                                    alignment: Alignment.center,
+                                    child: Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Icon(
+                                          Icons.local_parking,
+                                          size: 48,
+                                          color: Colors.deepPurple.shade300,
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          widget.title,
+                                          style: TextStyle(
+                                            color: Colors.deepPurple.shade700,
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                          textAlign: TextAlign.center,
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                },
                               ),
-                            );
-                          },
-                        ),
                       ),
                       const SizedBox(height: 12),
                       Text(
