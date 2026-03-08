@@ -13,6 +13,12 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
+  static const Duration _gmtPlus7Offset = Duration(hours: 7);
+
+  DateTime _toGmtPlus7(DateTime dateTime) {
+    return dateTime.toUtc().add(_gmtPlus7Offset);
+  }
+
   @override
   void initState() {
     super.initState();
@@ -167,7 +173,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       );
     }
 
-    final now = DateTime.now();
+    final now = _toGmtPlus7(DateTime.now());
     // Check if bookedTimeEnd is valid (not a default/null date like 0001-01-01)
     final isValidEndTime = booking.bookedTimeEnd.year > 1900;
     final effectiveEndTime = (['PENDING', 'ARRIVED'].contains(booking.status) || !isValidEndTime) ? now : booking.bookedTimeEnd;
@@ -221,7 +227,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                   ),
                 ],
               ),
-              _buildStatusDetail('เวลาเริ่มจอง', DateFormat('HH:mm').format(booking.bookedTimeStart)),
+              _buildStatusDetail('เวลาเริ่มจอง', DateFormat('HH:mm').format(_toGmtPlus7(booking.bookedTimeStart))),
             ],
           ),
           const SizedBox(height: 16),
@@ -363,7 +369,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   }
 
   Widget _buildRecentActivityItemFromBooking(BookingResponse booking) {
-    final now = DateTime.now();
+    final now = _toGmtPlus7(DateTime.now());
     // Check if bookedTimeEnd is valid (not a default/null date like 0001-01-01)
     final isValidEndTime = booking.bookedTimeEnd.year > 1900;
     final effectiveEndTime = (['PENDING', 'ARRIVED'].contains(booking.status) || !isValidEndTime) ? now : booking.bookedTimeEnd;
@@ -371,7 +377,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     final hours = totalMinutes ~/ 60;
     final minutes = totalMinutes % 60;
     final cost = totalMinutes > 0 ? (booking.hourlyRate / 60) * totalMinutes : 0.0;
-    final dateStr = DateFormat('dd MMM yyyy').format(booking.bookedTimeStart);
+    final dateStr = DateFormat('dd MMM yyyy').format(_toGmtPlus7(booking.bookedTimeStart));
     
     final durationStr = minutes > 0 ? '$hours ชม. $minutes นาที' : '$hours ชม.';
 
