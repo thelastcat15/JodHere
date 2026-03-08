@@ -27,9 +27,8 @@ class ProfileRepository {
   }
 
   Future<DeleteProfileModel> deleteProfile() async {
-    final body = <String, dynamic>{};
 
-    final response = await _apiClient.delete('/profile', body: body);
+    final response = await _apiClient.delete('/profile');
 
     return DeleteProfileModel.fromJson(response);
   }

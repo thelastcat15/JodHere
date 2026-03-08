@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:jodhere/core/api/api_client.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:jodhere/features/booking/data/models/booking_model.dart';
+import 'package:jodhere/features/home/presentation/cubit/home_cubit.dart';
+import 'package:jodhere/features/home/presentation/cubit/home_state.dart';
 import 'package:intl/intl.dart';
 
 class HomePage extends StatefulWidget {
@@ -11,54 +12,95 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
-  List<BookingResponse> bookings = [];
-
+class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
-    _fetchBookings();
+    WidgetsBinding.instance.addObserver(this);
+    // Fetch bookings when page loads
+    context.read<HomeCubit>().fetchBookings();
   }
 
-  Future<void> _fetchBookings() async {
-    try {
-      final apiClient = ApiClient(Supabase.instance.client);
-      final response = await apiClient.get('/bookings');
-      final data = response['data'] as List<dynamic>;
-      setState(() {
-        bookings = data.map((e) => BookingResponse.fromJson(e as Map<String, dynamic>)).toList();
-      });
-    } catch (e) {
-      // Handle error, perhaps show snackbar
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      // Refresh when app resumes
+      context.read<HomeCubit>().refreshBookings();
     }
   }
+
   @override
   Widget build(BuildContext context) {
-    final activeBooking = bookings.where((b) => ['PENDING', 'ARRIVED'].contains(b.status)).firstOrNull;
-    final historyBookings = bookings.where((b) => ['CANCELLED', 'COMPLETED', 'EXPIRED'].contains(b.status)).toList();
+    return BlocConsumer<HomeCubit, HomeState>(
+      listener: (context, state) {
+        // Show success message when booking is cancelled
+        if (state is HomeBookingCancelled) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('ยกเลิกการจองสำเร็จ'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+        
+        // Show error message
+        if (state is HomeError) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('เกิดข้อผิดพลาด: ${state.message}'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      },
+      builder: (context, state) {
+        if (state is HomeLoading || state is HomeInitial) {
+          return const SingleChildScrollView(
+            child: Center(child: CircularProgressIndicator()),
+          );
+        }
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildParkingStatusCard(activeBooking),
-          const SizedBox(height: 24),
-          _buildSectionHeader('ประวัติการจอด'),
-          if (historyBookings.isEmpty)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 16.0),
-              child: Center(
-                child: Text(
-                  'ไม่มีประวัติการจอด',
-                  style: TextStyle(color: Colors.grey[600], fontSize: 14),
-                ),
-              ),
-            )
-          else
-            ...historyBookings.map((booking) => _buildRecentActivityItemFromBooking(booking)),
-        ],
-      ),
+        List<BookingResponse> bookings = [];
+        
+        if (state is HomeLoaded) {
+          bookings = state.bookings;
+        } else if (state is HomeBookingCancelled) {
+          bookings = state.bookings;
+        }
+
+        final activeBooking = bookings.where((b) => ['PENDING', 'ARRIVED'].contains(b.status)).firstOrNull;
+        final historyBookings = bookings.where((b) => ['CANCELLED', 'COMPLETED', 'EXPIRED'].contains(b.status)).toList();
+
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildParkingStatusCard(activeBooking, state is HomeLoading),
+              const SizedBox(height: 24),
+              _buildSectionHeader('ประวัติการจอด'),
+              if (historyBookings.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 16.0),
+                  child: Center(
+                    child: Text(
+                      'ไม่มีประวัติการจอด',
+                      style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                    ),
+                  ),
+                )
+              else
+                ...historyBookings.map((booking) => _buildRecentActivityItemFromBooking(booking)),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -86,7 +128,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildParkingStatusCard(BookingResponse? booking) {
+  Widget _buildParkingStatusCard(BookingResponse? booking, bool isLoading) {
     if (booking == null) {
       // No active booking
       return Center(
@@ -125,8 +167,12 @@ class _HomePageState extends State<HomePage> {
       );
     }
 
-    final duration = booking.bookedTimeEnd.difference(booking.bookedTimeStart).inMinutes / 60.0;
-    final cost = booking.hourlyRate * duration;
+    final now = DateTime.now();
+    // Check if bookedTimeEnd is valid (not a default/null date like 0001-01-01)
+    final isValidEndTime = booking.bookedTimeEnd.year > 1900;
+    final effectiveEndTime = (['PENDING', 'ARRIVED'].contains(booking.status) || !isValidEndTime) ? now : booking.bookedTimeEnd;
+    final totalMinutes = effectiveEndTime.difference(booking.bookedTimeStart).inMinutes.abs();
+    final cost = totalMinutes > 0 ? (booking.hourlyRate / 60) * totalMinutes : 0.0;
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -196,7 +242,7 @@ class _HomePageState extends State<HomePage> {
             width: double.infinity,
             height: 48,
             child: ElevatedButton(
-              onPressed: () {},
+              onPressed: isLoading ? null : () => _showCancelConfirmationDialog(booking),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.white,
                 foregroundColor: Colors.deepPurple[700],
@@ -205,10 +251,19 @@ class _HomePageState extends State<HomePage> {
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              child: const Text(
-                'ดูรายละเอียด',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-              ),
+              child: isLoading
+                  ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.deepPurple),
+                      ),
+                    )
+                  : const Text(
+                      'ยกเลิก',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                    ),
             ),
           ),
         ],
@@ -308,10 +363,14 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildRecentActivityItemFromBooking(BookingResponse booking) {
-    final totalMinutes = booking.bookedTimeEnd.difference(booking.bookedTimeStart).inMinutes;
+    final now = DateTime.now();
+    // Check if bookedTimeEnd is valid (not a default/null date like 0001-01-01)
+    final isValidEndTime = booking.bookedTimeEnd.year > 1900;
+    final effectiveEndTime = (['PENDING', 'ARRIVED'].contains(booking.status) || !isValidEndTime) ? now : booking.bookedTimeEnd;
+    final totalMinutes = effectiveEndTime.difference(booking.bookedTimeStart).inMinutes.abs();
     final hours = totalMinutes ~/ 60;
     final minutes = totalMinutes % 60;
-    final cost = booking.hourlyRate * (totalMinutes / 60.0);
+    final cost = totalMinutes > 0 ? (booking.hourlyRate / 60) * totalMinutes : 0.0;
     final dateStr = DateFormat('dd MMM yyyy').format(booking.bookedTimeStart);
     
     final durationStr = minutes > 0 ? '$hours ชม. $minutes นาที' : '$hours ชม.';
@@ -327,9 +386,9 @@ class _HomePageState extends State<HomePage> {
   String _getStatusLabel(String status) {
     switch (status) {
       case 'PENDING':
-        return 'รอดำเนิน';
+        return 'กำลังจอง';
       case 'ARRIVED':
-        return 'เข้าแล้ว';
+        return 'ถึงแล้ว';
       case 'COMPLETED':
         return 'เสร็จสิ้น';
       case 'CANCELLED':
@@ -337,5 +396,30 @@ class _HomePageState extends State<HomePage> {
       default:
         return status;
     }
+  }
+  void _showCancelConfirmationDialog(BookingResponse booking) {
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: const Text('ยืนยันการยกเลิก'),
+          content: Text('คุณต้องการยกเลิกการจองที่ ${booking.parking.name} ใช่หรือไม่?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('ยกเลิก'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+                // Use cubit to cancel booking
+                context.read<HomeCubit>().cancelBooking(booking.id);
+              },
+              child: const Text('ยืนยัน'),
+            ),
+          ],
+        );
+      },
+    );
   }
 }

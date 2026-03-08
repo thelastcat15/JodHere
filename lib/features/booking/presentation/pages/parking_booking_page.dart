@@ -6,6 +6,9 @@ import 'package:jodhere/features/booking/presentation/cubit/slot_cubit.dart';
 import 'package:jodhere/features/booking/presentation/cubit/slot_state.dart';
 import 'package:jodhere/features/booking/presentation/cubit/booking_cubit.dart';
 import 'package:jodhere/features/booking/presentation/cubit/booking_state.dart';
+import 'package:jodhere/features/booking/data/repositories/booking_repository.dart';
+import 'package:jodhere/core/api/api_client.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ParkingBookingPage extends StatefulWidget {
   final String title;
@@ -30,6 +33,132 @@ class _ParkingBookingPageState extends State<ParkingBookingPage> {
     super.initState();
     // Load parking details when page initializes
     context.read<ParkingDetailCubit>().getParkingDetail(widget.parkingId);
+  }
+
+  /// Check if user has active booking (PENDING or ARRIVED)
+  Future<bool> _hasActiveBooking() async {
+    try {
+      final apiClient = ApiClient(Supabase.instance.client);
+      final repository = BookingRepository(apiClient);
+      final bookings = await repository.getBookings();
+      
+      // Check if bookings is null or empty
+      if (bookings.isEmpty) {
+        return false;
+      }
+      
+      // Check if there's any active booking
+      return bookings.any((booking) => 
+        booking.status == 'PENDING' || booking.status == 'ARRIVED'
+      );
+    } catch (e) {
+      // Return false if any error occurs (including null errors)
+      debugPrint('Error checking active booking: $e');
+      return false;
+    }
+  }
+
+  /// Show confirmation dialog before creating booking
+  Future<void> _showBookingConfirmation(String slotName, String zoneName) async {
+    // Show loading dialog while checking
+    if (!mounted) return;
+    
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return const Center(
+          child: CircularProgressIndicator(),
+        );
+      },
+    );
+
+    // First check if user already has active booking
+    final hasActive = await _hasActiveBooking();
+    
+    if (!mounted) return;
+    
+    // Close loading dialog
+    Navigator.of(context).pop();
+
+    if (hasActive) {
+      // Show error dialog - cannot book multiple slots
+      showDialog(
+        context: context,
+        builder: (BuildContext dialogContext) {
+          return AlertDialog(
+            title: const Text('ไม่สามารถจองได้'),
+            content: const Text('คุณมีการจองที่กำลังดำเนินการอยู่แล้ว\nกรุณายกเลิกการจองเดิมก่อนจองใหม่'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(),
+                child: const Text('ตกลง'),
+              ),
+            ],
+          );
+        },
+      );
+      return;
+    }
+
+    // Show confirmation dialog
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: const Text('ยืนยันการจอง'),
+          content: Text(
+            'คุณต้องการจองที่จอด $slotName\nในโซน $zoneName ใช่หรือไม่?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('ยกเลิก'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.deepPurple,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('ยืนยันการจอง'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed == true && mounted) {
+      // Double check before creating booking
+      final stillHasActive = await _hasActiveBooking();
+      
+      if (!mounted) return;
+
+      if (stillHasActive) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('คุณมีการจองที่กำลังดำเนินการอยู่แล้ว'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return;
+      }
+
+      // Proceed with booking
+      if (mounted && _selectedZoneId != null) {
+        // Find the slot ID from the slot name
+        final slotState = context.read<SlotCubit>().state;
+        if (slotState is SlotLoaded) {
+          final slot = slotState.slots.firstWhere((s) => s.name == slotName);
+          context.read<BookingCubit>().createBooking(
+            parkingId: widget.parkingId,
+            zoneId: _selectedZoneId!,
+            slotId: slot.id,
+            start: _selectedTime,
+          );
+        }
+      }
+    }
   }
 
   @override
@@ -211,13 +340,17 @@ class _ParkingBookingPageState extends State<ParkingBookingPage> {
 
                                   return GestureDetector(
                                     onTap: () {
-                                      // Immediately create booking when slot is tapped
-                                      context.read<BookingCubit>().createBooking(
-                                            parkingId: widget.parkingId,
-                                            zoneId: _selectedZoneId!,
-                                            slotId: slot.id,
-                                            start: _selectedTime,
-                                          );
+                                      // Get zone name for confirmation dialog
+                                      final parkingState = context.read<ParkingDetailCubit>().state;
+                                      String zoneName = '';
+                                      if (parkingState is ParkingDetailLoaded) {
+                                        final zone = parkingState.parkingDetail.zones
+                                            .firstWhere((z) => z.id == _selectedZoneId);
+                                        zoneName = zone.name;
+                                      }
+                                      
+                                      // Show confirmation dialog
+                                      _showBookingConfirmation(slot.name, zoneName);
                                     },
                                     child: Container(
                                       decoration: BoxDecoration(

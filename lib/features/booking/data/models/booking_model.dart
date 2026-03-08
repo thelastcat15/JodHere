@@ -32,7 +32,7 @@ class BookingResponse {
       status: json['status'],
       bookedTimeStart: DateTime.parse(json['booked_time_start']),
       bookedTimeEnd: DateTime.parse(json['booked_time_end']),
-      hourlyRate: (json['zone']['hour_rate'] as num).toDouble(),
+      hourlyRate: (json['hourly_rate'] as num).toDouble(),
       durationHours: json['duration_hours'] != null
           ? (json['duration_hours'] as num).toDouble()
           : null,
@@ -116,19 +116,16 @@ class ZoneInfo {
 class SlotInfo {
   final String id;
   final String name;
-  final double hourRate;
 
   SlotInfo({
     required this.id,
     required this.name,
-    required this.hourRate,
   });
 
   factory SlotInfo.fromJson(Map<String, dynamic> json) {
     return SlotInfo(
       id: json['id'],
       name: json['name'],
-      hourRate: (json['hour_rate'] as num).toDouble(),
     );
   }
 
@@ -136,7 +133,6 @@ class SlotInfo {
     return {
       "id": id,
       "name": name,
-      "hour_rate": hourRate,
     };
   }
 }

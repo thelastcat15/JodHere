@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:jodhere/features/home/presentation/pages/home_page.dart';
+import 'package:jodhere/features/home/presentation/cubit/home_cubit.dart';
 import 'package:jodhere/features/booking/presentation/pages/booking_page.dart';
 import 'package:jodhere/features/profile/presentation/pages/profile_page.dart';
 import 'package:jodhere/features/profile/presentation/cubit/profile_cubit.dart';
@@ -27,8 +28,8 @@ class MainLayout extends StatefulWidget {
 
 class _MainLayoutState extends State<MainLayout> {
   late int _currentIndex;
-
   late final List<Widget> _pages;
+  late final HomeCubit _homeCubit;
 
   @override
   void initState() {
@@ -43,8 +44,14 @@ class _MainLayoutState extends State<MainLayout> {
     final bookingRepository = BookingRepository(apiClient);
     final parkingRepository = ParkingRepository(apiClient);
 
+    // Create HomeCubit to persist across tab changes
+    _homeCubit = HomeCubit(bookingRepository);
+
     _pages = [
-      const HomePage(),
+      BlocProvider.value(
+        value: _homeCubit,
+        child: const HomePage(),
+      ),
       MultiBlocProvider(
         providers: [
           BlocProvider(
@@ -69,8 +76,19 @@ class _MainLayoutState extends State<MainLayout> {
     ];
   }
 
+  @override
+  void dispose() {
+    _homeCubit.close();
+    super.dispose();
+  }
+
   void _onNavTap(int index) {
     if (index == _currentIndex) return;
+
+    // Refresh home page when returning to it
+    if (index == 0) {
+      _homeCubit.refreshBookings();
+    }
 
     setState(() {
       _currentIndex = index;

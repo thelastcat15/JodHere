@@ -10,7 +10,14 @@ class BookingRepository {
   Future<List<BookingResponse>> getBookings() async {
     final res = await api.get("/bookings");
 
-    final List data = res["data"];
+    final dynamic dataResponse = res["data"];
+    
+    // Handle null or non-list data
+    if (dataResponse == null || dataResponse is! List) {
+      return [];
+    }
+
+    final List data = dataResponse;
 
     return data
         .map((e) => BookingResponse.fromJson(e))
