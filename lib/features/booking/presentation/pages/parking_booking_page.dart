@@ -10,6 +10,7 @@ import 'package:jodhere/features/booking/data/repositories/booking_repository.da
 import 'package:jodhere/core/api/api_client.dart';
 import 'package:jodhere/core/api/api_config.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class ParkingBookingPage extends StatefulWidget {
   final String title;
@@ -262,21 +263,58 @@ class _ParkingBookingPageState extends State<ParkingBookingPage> {
                     children: [
                       ClipRRect(
                         borderRadius: BorderRadius.circular(12),
-                        child: Image.network(
-                          imageUrl,
+                        child: CachedNetworkImage(
+                          imageUrl: imageUrl,
                           height: 160,
                           width: double.infinity,
                           fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
+                          httpHeaders: const {
+                            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                          },
+                          placeholder: (context, url) => Container(
+                            height: 160,
+                            width: double.infinity,
+                            color: Colors.grey[100],
+                            alignment: Alignment.center,
+                            child: const CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.deepPurple,
+                            ),
+                          ),
+                          errorWidget: (context, url, error) {
                             return Container(
                               height: 160,
                               width: double.infinity,
-                              color: Colors.grey[200],
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                  colors: [
+                                    Colors.deepPurple.shade100,
+                                    Colors.deepPurple.shade50,
+                                  ],
+                                ),
+                              ),
                               alignment: Alignment.center,
-                              child: const Icon(
-                                Icons.local_parking,
-                                size: 40,
-                                color: Colors.grey,
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.local_parking,
+                                    size: 48,
+                                    color: Colors.deepPurple.shade300,
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    widget.title,
+                                    style: TextStyle(
+                                      color: Colors.deepPurple.shade700,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ],
                               ),
                             );
                           },
